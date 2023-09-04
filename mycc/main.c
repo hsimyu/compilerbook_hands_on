@@ -140,7 +140,6 @@ Token *tokenize(char *p)
         {
             cur = new_token(TK_RESERVED, cur, p++);
             continue;
-            ;
         }
 
         if (isdigit(*p))
@@ -150,7 +149,7 @@ Token *tokenize(char *p)
             continue;
         }
 
-        error_at(token->str, "Failed to tokenize: %c", *p);
+        error_at(cur->str + 1, "Failed to tokenize: %c", *p);
     }
 
     new_token(TK_EOF, cur, p);
