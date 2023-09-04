@@ -136,7 +136,7 @@ Token *tokenize(char *p)
             continue;
         }
 
-        if (*p == '+' || *p == '-')
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')')
         {
             cur = new_token(TK_RESERVED, cur, p++);
             continue;
@@ -277,6 +277,8 @@ void gen(Node *node)
         printf("  cqo\n");
         printf("  idiv rdi\n");
         break;
+    default:
+        break;
     }
 
     printf("  push rax\n");
@@ -293,32 +295,18 @@ int main(int argc, char **argv)
     // トークン列を生成
     user_input = argv[1];
     token = tokenize(argv[1]);
+    Node *node = expr();
 
     // アセンブリのヘッダー
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
 
-    // 式の最初は数字であるという制約を満たしているか確認
-    printf("  mov rax, %d\n", expect_number());
+    // AST -> ASM
+    gen(node);
 
-    while (!at_eof())
-    {
-        if (consume('+'))
-        {
-            // + の後には数字が来ないといけない
-            // 次の演算子まで消費
-            printf("  add rax, %d\n", expect_number());
-            continue;
-        }
-
-        // それ以外は - である
-        expect('-');
-
-        // 次の演算子まで消費
-        printf("  sub rax, %d\n", expect_number());
-    }
-
+    // 関数からの返り値としてスタックトップの値を rax にロードして返す
+    printf("  pop rax\n");
     printf("  ret\n");
     return 0;
 }
