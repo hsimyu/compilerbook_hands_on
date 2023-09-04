@@ -243,6 +243,45 @@ Node *primary()
     return new_node_num(expect_number());
 }
 
+// assembler
+void gen(Node *node)
+{
+    if (node->kind == ND_NUM)
+    {
+        printf("  push %d\n", node->val);
+        return;
+    }
+
+    gen(node->lhs);
+    gen(node->rhs);
+
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+
+    switch (node->kind)
+    {
+    case ND_ADD:
+        printf("  add rax, rdi\n");
+        break;
+    case ND_SUB:
+        printf("  sub rax, rdi\n");
+        break;
+    case ND_MUL:
+        printf("  imul rax, rdi\n");
+        break;
+    case ND_DIV:
+        // imul は rdx と rax を取って 128 ビットの値とし、
+        // 引数のレジスタで割り、
+        // 商を rax に、余りを rdx にセットする命令
+        // cqo: rax に入っている 64bit の値を 128bit に伸ばして rdx と rax にセットする
+        printf("  cqo\n");
+        printf("  idiv rdi\n");
+        break;
+    }
+
+    printf("  push rax\n");
+}
+
 int main(int argc, char **argv)
 {
     if (argc != 2)
