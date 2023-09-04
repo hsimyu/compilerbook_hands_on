@@ -5,25 +5,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum
+// 入力プログラム
+char *user_input;
+
+// エラー箇所を報告します。
+void error_at(char *loc, char *fmt, ...)
 {
-    TK_RESERVED, // 記号
-    TK_NUM,      // 整数
-    TK_EOF,      // 入力の終わり
-} TokenKind;
+    va_list ap;
+    va_start(ap, fmt);
 
-typedef struct Token Token;
-
-struct Token
-{
-    TokenKind kind; // トークン型
-    Token *next;    // 次の入力トークン
-    int val;        // TK_NUM の場合、その数値
-    char *str;      // トークン文字列
-};
-
-// 現在着目しているトークン
-Token *current_token;
+    int pos = loc - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, " "); // pos 個の空白
+    fprintf(stderr, "^ ");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
 
 // エラーを出力します。
 void error(char *fmt, ...)
@@ -35,14 +33,49 @@ void error(char *fmt, ...)
     exit(1);
 }
 
+typedef enum
+{
+    TK_RESERVED, // 記号
+    TK_NUM,      // 整数
+    TK_EOF,      // 入力の終わり
+} TokenKind;
+
+typedef struct Token Token;
+
+const char *tokenKindToString(TokenKind kind)
+{
+    switch (kind)
+    {
+    case TK_RESERVED:
+        return "Reserved";
+    case TK_NUM:
+        return "Number";
+    case TK_EOF:
+        return "EOF";
+    }
+
+    return "Unknown";
+}
+
+struct Token
+{
+    TokenKind kind; // トークン型
+    Token *next;    // 次の入力トークン
+    int val;        // TK_NUM の場合、その数値
+    char *str;      // トークン文字列
+};
+
+// 現在着目しているトークン
+Token *token;
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
 // それ以外の場合には false を返す
 bool consume(char op)
 {
-    if (current_token->kind != TK_RESERVED || current_token->str[0] != op)
+    if (token->kind != TK_RESERVED || token->str[0] != op)
         return false;
 
-    current_token = current_token->next;
+    token = token->next;
     return true;
 }
 
@@ -50,28 +83,31 @@ bool consume(char op)
 // それ以外の場合にはエラーを報告する。
 void expect(char op)
 {
-    if (current_token->kind != TK_RESERVED || current_token->str[0] != op)
-        error("Invalid TokenKind: expected = '%c', actual = '%c", op, current_token->kind);
+    if (token->kind != TK_RESERVED || token->str[0] != op)
+        error_at(token->str, "Invalid TokenKind: expected = '%s', actual = '%s",
+                 tokenKindToString(op),
+                 tokenKindToString(token->kind));
 
-    current_token = current_token->next;
+    token = token->next;
 }
 
 // 次のトークンが数値の場合、トークンを 1 つ読み進めてその数値を返す。
 // それ以外の場合には、エラーを報告する。
 int expect_number()
 {
-    if (current_token->kind != TK_NUM)
-        error("Invalid TokenKind: excected = Number, actual = '%c'", current_token->kind);
+    if (token->kind != TK_NUM)
+        error_at(token->str, "Invalid TokenKind: excected = 'Number', actual = '%s'",
+                 tokenKindToString(token->kind));
 
-    int val = current_token->val;
-    current_token = current_token->next;
+    int val = token->val;
+    token = token->next;
     return val;
 }
 
 // 入力の終わりかどうかを判定します。
 bool at_eof()
 {
-    return current_token->kind == TK_EOF;
+    return token->kind == TK_EOF;
 }
 
 // 新しいトークンを作成して、cur に繋げます。
@@ -114,7 +150,7 @@ Token *tokenize(char *p)
             continue;
         }
 
-        error("Failed to tokenize: %c", *p);
+        error_at(token->str, "Failed to tokenize: %c", *p);
     }
 
     new_token(TK_EOF, cur, p);
@@ -130,7 +166,8 @@ int main(int argc, char **argv)
     }
 
     // トークン列を生成
-    current_token = tokenize(argv[1]);
+    user_input = argv[1];
+    token = tokenize(argv[1]);
 
     // アセンブリのヘッダー
     printf(".intel_syntax noprefix\n");
