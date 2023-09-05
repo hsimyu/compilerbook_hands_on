@@ -196,6 +196,7 @@ Node *new_node_num(int val)
 
 Node *expr();
 Node *mul();
+Node *unary();
 Node *primary();
 
 Node *expr()
@@ -216,18 +217,35 @@ Node *expr()
 
 Node *mul()
 {
-    // mul = primary ("*" primary | "/" primary)*
-    Node *node = primary();
+    // mul = unary ("*" unary | "/" unary)*
+    Node *node = unary();
 
     for (;;)
     {
         if (consume('*'))
-            node = new_node(ND_MUL, node, primary());
+            node = new_node(ND_MUL, node, unary());
         else if (consume('/'))
-            node = new_node(ND_DIV, node, primary());
+            node = new_node(ND_DIV, node, unary());
         else
             return node;
     }
+}
+
+Node *unary()
+{
+    // unary = ("+" | "-")? primary
+    if (consume('+'))
+    {
+        return primary();
+    }
+
+    if (consume('-'))
+    {
+        // 0 - primary の AST とする
+        return new_node(ND_SUB, new_node_num(0), primary());
+    }
+
+    return primary();
 }
 
 Node *primary()
