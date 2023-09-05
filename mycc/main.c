@@ -116,24 +116,12 @@ bool at_eof()
 }
 
 // 次のトークンの文字列長を調べます。
-int count_token(char *str)
+int count_token_length(char *str)
 {
-    if (strncmp(str, "==", 2) == 0)
-    {
-        return 2;
-    }
-
-    if (strncmp(str, "!=", 2) == 0)
-    {
-        return 2;
-    }
-
-    if (strncmp(str, "<=", 2) == 0)
-    {
-        return 2;
-    }
-
-    if (strncmp(str, ">=", 2) == 0)
+    if (strncmp(str, "==", 2) == 0 ||
+        strncmp(str, "!=", 2) == 0 ||
+        strncmp(str, ">=", 2) == 0 ||
+        strncmp(str, "<=", 2) == 0)
     {
         return 2;
     }
@@ -171,7 +159,7 @@ Token *tokenize(char *p)
 
         if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == '!' || *p == '<' || *p == '>')
         {
-            int token_length = count_token(p);
+            int token_length = count_token_length(p);
             cur = new_token(TK_RESERVED, cur, p, token_length);
             p = p + token_length;
             continue;
@@ -179,8 +167,10 @@ Token *tokenize(char *p)
 
         if (isdigit(*p))
         {
-            cur = new_token(TK_NUM, cur, p, 1); // ここ 1 でいいの?
+            cur = new_token(TK_NUM, cur, p, 0); // len は dummy
+            char *q = p;
             cur->val = strtol(p, &p, 10);
+            cur->len = p - q;
             continue;
         }
 
