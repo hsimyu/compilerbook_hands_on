@@ -27,6 +27,8 @@ assert 10 "-10+20"
 assert 10 '- -10'
 assert 10 '- - +10'
 assert 1 '5 == 5'
+assert 0 '5 != 5'
+assert 1 '4 != -1'
 assert 0 '5 < 5'
 assert 1 '1 < 2'
 assert 1 '1 <= 2'
