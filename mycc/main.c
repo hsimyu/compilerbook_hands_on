@@ -354,6 +354,37 @@ void gen(Node *node)
 
     switch (node->kind)
     {
+    case ND_EQ:
+        printf("  cmp rax, rdi\n");
+        printf("  sete al\n");       // al は rax の下位 8 ビット
+        printf("  movzb rax, al\n"); // 残り 56 ビットをクリア
+        break;
+    case ND_NE:
+        printf("  cmp rax, rdi\n");
+        printf("  setne al\n");
+        printf("  movzb rax, al\n");
+        break;
+    case ND_LE:
+        printf("  cmp rax, rdi\n");
+        printf("  setle al\n");
+        printf("  movzb rax, al\n");
+        break;
+    case ND_LT:
+        printf("  cmp rax, rdi\n");
+        printf("  setl al\n");
+        printf("  movzb rax, al\n");
+        break;
+    case ND_GE:
+        // GE, GT は rax, rdi を入れ替える
+        printf("  cmp rdi, rax\n");
+        printf("  setle al\n");
+        printf("  movzb rax, al\n");
+        break;
+    case ND_GT:
+        printf("  cmp rdi, rax\n");
+        printf("  setl al\n");
+        printf("  movzb rax, al\n");
+        break;
     case ND_ADD:
         printf("  add rax, rdi\n");
         break;
