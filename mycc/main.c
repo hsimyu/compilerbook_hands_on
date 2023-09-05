@@ -63,6 +63,7 @@ struct Token
     Token *next;    // 次の入力トークン
     int val;        // TK_NUM の場合、その数値
     char *str;      // トークン文字列
+    int len;        // トークンの長さ
 };
 
 // 現在着目しているトークン
@@ -70,9 +71,11 @@ Token *token;
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
 // それ以外の場合には false を返す
-bool consume(char op)
+bool consume(char *op)
 {
-    if (token->kind != TK_RESERVED || token->str[0] != op)
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len ||
+        memcmp(token->str, op, token->len))
         return false;
 
     token = token->next;
@@ -81,11 +84,13 @@ bool consume(char op)
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める
 // それ以外の場合にはエラーを報告する。
-void expect(char op)
+void expect(char *op)
 {
-    if (token->kind != TK_RESERVED || token->str[0] != op)
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len ||
+        memcmp(token->str, op, token->len))
         error_at(token->str, "Invalid TokenKind: expected = '%s', actual = '%s",
-                 tokenKindToString(op),
+                 op,
                  tokenKindToString(token->kind));
 
     token = token->next;
@@ -110,11 +115,29 @@ bool at_eof()
     return token->kind == TK_EOF;
 }
 
+// 次のトークンの文字列長を調べます。
+int count_token(char *str)
+{
+    if (strncmp(str, "==", 2) == 1 ||
+        strncmp(str, "!=", 2) == 1 ||
+        strncmp(str, "<=", 2) == 1 ||
+        strncmp(str, ">=", 2) == 1)
+    {
+        return 2;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
 // 新しいトークンを作成して、cur に繋げます。
-Token *new_token(TokenKind kind, Token *cur, char *str)
+Token *new_token(TokenKind kind, Token *cur, char *str, int len)
 {
     Token *tok = calloc(1, sizeof(Token));
     tok->kind = kind;
+    tok->str = str;
+    tok->len = len;
     tok->str = str;
     cur->next = tok;
     return tok;
@@ -136,15 +159,17 @@ Token *tokenize(char *p)
             continue;
         }
 
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')')
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == '!' || *p == '<' || *p == '>')
         {
-            cur = new_token(TK_RESERVED, cur, p++);
+            int token_length = count_token(p);
+            cur = new_token(TK_RESERVED, cur, p, token_length);
+            p = p + token_length;
             continue;
         }
 
         if (isdigit(*p))
         {
-            cur = new_token(TK_NUM, cur, p);
+            cur = new_token(TK_NUM, cur, p, 1); // ここ 1 でいいの?
             cur->val = strtol(p, &p, 10);
             continue;
         }
@@ -152,13 +177,19 @@ Token *tokenize(char *p)
         error_at(cur->str + 1, "Failed to tokenize: %c", *p);
     }
 
-    new_token(TK_EOF, cur, p);
+    new_token(TK_EOF, cur, p, 1);
     return head.next;
 }
 
 // parser
 typedef enum
 {
+    ND_EQ,  // ==
+    ND_NE,  // !=
+    ND_LE,  // <=
+    ND_LT,  // <
+    ND_GE,  // >=
+    ND_GT,  // <
     ND_ADD, // +
     ND_SUB, // -
     ND_MUL, // *
@@ -195,20 +226,65 @@ Node *new_node_num(int val)
 }
 
 Node *expr();
+Node *equality();
+Node *relational();
+Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
 
 Node *expr()
 {
-    // expr = mul ("+" mul | "-" mul)*
+    // expr = equality
+    return equality();
+}
+
+Node *equality()
+{
+    // equality = relational ("==" relational | "!=" relational)*
+    Node *node = relational();
+
+    for (;;)
+    {
+        if (consume("=="))
+            node = new_node(ND_EQ, node, relational());
+        else if (consume("!="))
+            node = new_node(ND_NE, node, relational());
+        else
+            return node;
+    }
+}
+
+Node *relational()
+{
+    // relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+    Node *node = add();
+
+    for (;;)
+    {
+        if (consume("<="))
+            node = new_node(ND_LE, node, add());
+        else if (consume("<"))
+            node = new_node(ND_LT, node, add());
+        else if (consume(">="))
+            node = new_node(ND_GE, node, add());
+        else if (consume(">"))
+            node = new_node(ND_GT, node, add());
+        else
+            return node;
+    }
+}
+
+Node *add()
+{
+    // add = mul ("+" mul | "-" mul)*
     Node *node = mul();
 
     for (;;)
     {
-        if (consume('+'))
+        if (consume("+"))
             node = new_node(ND_ADD, node, mul());
-        else if (consume('-'))
+        else if (consume("-"))
             node = new_node(ND_SUB, node, mul());
         else
             return node;
@@ -222,9 +298,9 @@ Node *mul()
 
     for (;;)
     {
-        if (consume('*'))
+        if (consume("*"))
             node = new_node(ND_MUL, node, unary());
-        else if (consume('/'))
+        else if (consume("/"))
             node = new_node(ND_DIV, node, unary());
         else
             return node;
@@ -234,12 +310,12 @@ Node *mul()
 Node *unary()
 {
     // unary = ("+" | "-")? primary
-    if (consume('+'))
+    if (consume("+"))
     {
         return primary();
     }
 
-    if (consume('-'))
+    if (consume("-"))
     {
         // 0 - primary の AST とする
         return new_node(ND_SUB, new_node_num(0), primary());
@@ -251,10 +327,10 @@ Node *unary()
 Node *primary()
 {
     // primary = num | "(" expr ")"
-    if (consume('('))
+    if (consume("("))
     {
         Node *node = expr();
-        expect(')'); // () で囲まれていなければエラー
+        expect(")"); // () で囲まれていなければエラー
         return node;
     }
 
@@ -296,6 +372,7 @@ void gen(Node *node)
         printf("  idiv rdi\n");
         break;
     default:
+        error("Failed to generate assembly: unknown node = %d", node->kind);
         break;
     }
 
