@@ -32,7 +32,7 @@ assert 1 '1 < 2'
 assert 1 '1 <= 2'
 assert 0 '4 <= 2'
 assert 1 '4 > 2'
-assert 0 '4 >= 4'
+assert 1 '4 >= 4'
 assert 0 '(20 + 3 - 40) >= -4'
 
 echo OK

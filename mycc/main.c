@@ -118,17 +118,27 @@ bool at_eof()
 // 次のトークンの文字列長を調べます。
 int count_token(char *str)
 {
-    if (strncmp(str, "==", 2) == 1 ||
-        strncmp(str, "!=", 2) == 1 ||
-        strncmp(str, "<=", 2) == 1 ||
-        strncmp(str, ">=", 2) == 1)
+    if (strncmp(str, "==", 2) == 0)
     {
         return 2;
     }
-    else
+
+    if (strncmp(str, "!=", 2) == 0)
     {
-        return 1;
+        return 2;
     }
+
+    if (strncmp(str, "<=", 2) == 0)
+    {
+        return 2;
+    }
+
+    if (strncmp(str, ">=", 2) == 0)
+    {
+        return 2;
+    }
+
+    return 1;
 }
 
 // 新しいトークンを作成して、cur に繋げます。
