@@ -6,12 +6,17 @@
 #include "util.h"
 #include "tokenizer.h"
 
+// 現在着目しているトークン
+Token *token;
+
 const char *tokenKindToString(TokenKind kind)
 {
     switch (kind)
     {
     case TK_RESERVED:
         return "Reserved";
+    case TK_IDENT:
+        return "Identifier";
     case TK_NUM:
         return "Number";
     case TK_EOF:
@@ -19,49 +24,6 @@ const char *tokenKindToString(TokenKind kind)
     }
 
     return "Unknown";
-}
-
-// 現在着目しているトークン
-Token *token;
-
-// 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
-// それ以外の場合には false を返す
-bool consume(char *op)
-{
-    if (token->kind != TK_RESERVED ||
-        strlen(op) != token->len ||
-        memcmp(token->str, op, token->len))
-        return false;
-
-    token = token->next;
-    return true;
-}
-
-// 次のトークンが期待している記号のときには、トークンを1つ読み進める
-// それ以外の場合にはエラーを報告する。
-void expect(char *op)
-{
-    if (token->kind != TK_RESERVED ||
-        strlen(op) != token->len ||
-        memcmp(token->str, op, token->len))
-        error_at(token->str, "Invalid TokenKind: expected = '%s', actual = '%s",
-                 op,
-                 tokenKindToString(token->kind));
-
-    token = token->next;
-}
-
-// 次のトークンが数値の場合、トークンを 1 つ読み進めてその数値を返す。
-// それ以外の場合には、エラーを報告する。
-int expect_number()
-{
-    if (token->kind != TK_NUM)
-        error_at(token->str, "Invalid TokenKind: excected = 'Number', actual = '%s'",
-                 tokenKindToString(token->kind));
-
-    int val = token->val;
-    token = token->next;
-    return val;
 }
 
 // 入力の終わりかどうかを判定します。
@@ -109,6 +71,13 @@ void tokenize(char *p)
         if (isspace(*p))
         {
             p++;
+            continue;
+        }
+
+        if ('a' <= *p && *p <= 'z')
+        {
+            // 識別子は 1 文字固定
+            cur = new_token(TK_IDENT, cur, p++, 1);
             continue;
         }
 

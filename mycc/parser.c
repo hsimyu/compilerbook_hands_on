@@ -9,6 +9,48 @@
 #include "tokenizer.h"
 #include "parser.h"
 
+extern Token *token;
+
+// 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
+// それ以外の場合には false を返す
+bool consume(char *op)
+{
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len ||
+        memcmp(token->str, op, token->len))
+        return false;
+
+    token = token->next;
+    return true;
+}
+
+// 次のトークンが期待している記号のときには、トークンを1つ読み進める
+// それ以外の場合にはエラーを報告する。
+void expect(char *op)
+{
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len ||
+        memcmp(token->str, op, token->len))
+        error_at(token->str, "Invalid TokenKind: expected = '%s', actual = '%s",
+                 op,
+                 tokenKindToString(token->kind));
+
+    token = token->next;
+}
+
+// 次のトークンが数値の場合、トークンを 1 つ読み進めてその数値を返す。
+// それ以外の場合には、エラーを報告する。
+int expect_number()
+{
+    if (token->kind != TK_NUM)
+        error_at(token->str, "Invalid TokenKind: excected = 'Number', actual = '%s'",
+                 tokenKindToString(token->kind));
+
+    int val = token->val;
+    token = token->next;
+    return val;
+}
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs)
 {
     Node *node = calloc(1, sizeof(Node));
