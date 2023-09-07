@@ -26,12 +26,6 @@ const char *tokenKindToString(TokenKind kind)
     return "Unknown";
 }
 
-// 入力の終わりかどうかを判定します。
-bool at_eof()
-{
-    return token->kind == TK_EOF;
-}
-
 // 次のトークンの文字列長を調べます。
 int count_token_length(char *str)
 {
@@ -81,7 +75,7 @@ void tokenize(char *p)
             continue;
         }
 
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == '!' || *p == '<' || *p == '>')
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == '!' || *p == '<' || *p == '>' || *p == ';')
         {
             int token_length = count_token_length(p);
             cur = new_token(TK_RESERVED, cur, p, token_length);

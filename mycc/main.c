@@ -20,15 +20,20 @@ int main(int argc, char **argv)
     // トークン列を生成
     user_input = argv[1];
     tokenize(argv[1]);
-    Node *node = parse();
+    Node **nodes = parse();
 
     // アセンブリのヘッダー
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
 
-    // AST -> ASM
-    gen(node);
+    int line = 0;
+    while (nodes[line] != NULL)
+    {
+        // AST -> ASM
+        gen(nodes[line]);
+        line++;
+    }
 
     // 関数からの返り値としてスタックトップの値を rax にロードして返す
     printf("  pop rax\n");

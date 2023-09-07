@@ -51,6 +51,12 @@ int expect_number()
     return val;
 }
 
+// 入力の終わりかどうかを判定します。
+bool at_eof()
+{
+    return token->kind == TK_EOF;
+}
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs)
 {
     Node *node = calloc(1, sizeof(Node));
@@ -68,6 +74,17 @@ Node *new_node_num(int val)
     return node;
 }
 
+Node *new_node_ident(char *ident)
+{
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+    node->offset = (token->str[0] - 'a' + 1) * 8; // a なら 8, b なら 16……とオフセット値を増やす
+    return node;
+}
+
+void program();
+Node *statement();
+Node *assign();
 Node *expr();
 Node *equality();
 Node *relational();
@@ -76,15 +93,44 @@ Node *mul();
 Node *unary();
 Node *primary();
 
-Node *parse()
+Node *code[100]; // stmt の配列
+
+void program()
 {
-    return expr();
+    // program = statement*
+    int i = 0;
+    while (!at_eof())
+    {
+        code[i++] = statement();
+    }
+    code[i] = NULL;
+}
+
+Node *statement()
+{
+    // statement = expr ";"
+    Node *node = expr();
+    expect(";"); // ; で終わっていなければエラー
+    return node;
 }
 
 Node *expr()
 {
-    // expr = equality
-    return equality();
+    // expr = assign
+    return assign();
+}
+
+Node *assign()
+{
+    // assign = equality ("=" assign)?
+    Node *node = equality();
+
+    if (consume("="))
+    {
+        return new_node(ND_ASSIGN, node, assign());
+    }
+
+    return node;
 }
 
 Node *equality()
@@ -174,7 +220,7 @@ Node *unary()
 
 Node *primary()
 {
-    // primary = num | "(" expr ")"
+    // primary = num | ident | "(" expr ")"
     if (consume("("))
     {
         Node *node = expr();
@@ -182,5 +228,18 @@ Node *primary()
         return node;
     }
 
+    if (token->kind == TK_IDENT)
+    {
+        Node *node = new_node_ident(token->str);
+        return node;
+    }
+
     return new_node_num(expect_number());
+}
+
+// パースの開始
+Node **parse()
+{
+    program();
+    return code;
 }
