@@ -3,12 +3,37 @@
 #include "util.h"
 #include "parser.h"
 
+void gen_lval(Node *node)
+{
+    if (node->kind != ND_LVAR)
+        error("Failed to generate assembly: left-hand side of assign node is not Identifier: %c", node->kind);
+
+    printf("  mov rax, rbp\n");              // rax に関数トップの値を入れて、
+    printf("  sub rax, %d\n", node->offset); // 変数名に対応するオフセット値だけ rax を下げる
+    printf("  push rax\n");                  // rax の値 (= 変数のアドレス) をスタックに push する
+}
+
 // assembler
 void gen(Node *node)
 {
-    if (node->kind == ND_NUM)
+    switch (node->kind)
     {
+    case ND_NUM:
         printf("  push %d\n", node->val);
+        return;
+    case ND_LVAR:                     // ローカル変数の参照: スタックトップに評価値を積む
+        gen_lval(node);               // node が示す変数のアドレスをスタックに積む命令を生成
+        printf("  pop rax\n");        // 変数アドレスを取り出す
+        printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
+        printf("  push rax\n");       // 取り出した値をスタックに push する
+        return;
+    case ND_ASSIGN:
+        gen_lval(node->lhs);          // 左辺が示す変数のアドレスをスタックに積む
+        gen(node->rhs);               // 右辺の評価値をスタックに積む
+        printf("  pop rdi\n");        // 右辺の評価値を取り出す
+        printf("  pop rax\n");        // 変数アドレスを取り出す
+        printf("  mov [rax], rdi\n"); // 変数アドレスに評価値を格納
+        printf("  push rdi\n");       // 代入式の評価値は代入結果とするので、rdi をスタックに積む
         return;
     }
 
