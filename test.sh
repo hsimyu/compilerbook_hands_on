@@ -40,5 +40,6 @@ assert 2 '1;2;'
 assert 42 'a=42;'
 assert 42 'a=42;a;'
 assert 21 'a=1;b=a+20;'
+assert 64 'a=1;b=a+20;return b+43;'
 
 echo OK
