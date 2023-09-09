@@ -20,6 +20,8 @@ const char *tokenKindToString(TokenKind kind)
         return "Identifier";
     case TK_NUM:
         return "Number";
+    case TK_RETURN:
+        return "return";
     case TK_EOF:
         return "EOF";
     }
@@ -27,12 +29,18 @@ const char *tokenKindToString(TokenKind kind)
     return "Unknown";
 }
 
+// 文字が英数字またはアンダースコアかどうかを判定します。
+int is_alphabet_or_number(char c)
+{
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || (c == '_');
+}
+
 // 次の識別子トークンの文字列長を調べます。
 int count_identifier_length(char *str)
 {
     int length = 0;
     char c = str[length];
-    while ('a' <= c && c <= 'z')
+    while (is_alphabet_or_number(c))
     {
         length++;
         c = str[length];
@@ -79,6 +87,13 @@ void tokenize(char *p)
         if (isspace(*p))
         {
             p++;
+            continue;
+        }
+
+        if (strncmp(p, "return", 6) == 0 && !is_alphabet_or_number(p[6]))
+        {
+            cur = new_token(TK_RETURN, cur, p, 6);
+            p = p + 6;
             continue;
         }
 

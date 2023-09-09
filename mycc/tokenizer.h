@@ -5,6 +5,7 @@ typedef enum
     TK_RESERVED, // 記号
     TK_IDENT,    // 識別子
     TK_NUM,      // 整数
+    TK_RETURN,   // return
     TK_EOF,      // 入力の終わり
 } TokenKind;
 
