@@ -48,6 +48,17 @@ Token *consume_ident()
     return result;
 }
 
+// 次のトークンが return の場合は、トークンを 1 つ読み進めて true を返す。
+// それ以外の場合には false を返す。
+bool consume_return()
+{
+    if (token->kind != TK_RETURN)
+        return false;
+
+    token = token->next;
+    return true;
+}
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める
 // それ以外の場合にはエラーを報告する。
 void expect(char *op)
@@ -173,7 +184,16 @@ void program()
 
 Node *statement()
 {
-    // statement = expr ";"
+    // statement = expr ";" | "return" expr ";"
+    if (consume_return())
+    {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_RETURN;
+        node->lhs = expr(); // TODO: ここで expr を期待しているので "return;" とは書けない
+        expect(";");        // ; で終わっていなければエラー
+        return node;
+    }
+
     Node *node = expr();
     expect(";"); // ; で終わっていなければエラー
     return node;

@@ -16,6 +16,7 @@ typedef enum
     ND_DIV,    // /
     ND_NUM,    // 整数
     ND_LVAR,   // ローカル変数
+    ND_RETURN, // return
 } NodeKind;
 
 typedef struct Node Node;
