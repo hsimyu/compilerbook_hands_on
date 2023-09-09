@@ -11,6 +11,18 @@
 
 extern Token *token;
 
+typedef struct LVar LVar;
+struct LVar
+{
+    LVar *next; // 次の変数または NULL
+    char *name; // 変数の名前
+    int len;    // 長さ
+    int offset; // RBP からのオフセット
+};
+
+// ローカル変数のリスト
+LVar *locals;
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
 // それ以外の場合には false を返す
 bool consume(char *op)
@@ -22,6 +34,18 @@ bool consume(char *op)
 
     token = token->next;
     return true;
+}
+
+// 次のトークンが識別子の場合は、トークンを 1 つ読み進めてそのトークンを返す。
+// それ以外の場合には NULL を返す。
+Token *consume_ident()
+{
+    if (token->kind != TK_IDENT)
+        return NULL;
+
+    Token *result = token;
+    token = token->next;
+    return result;
 }
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める
@@ -74,11 +98,52 @@ Node *new_node_num(int val)
     return node;
 }
 
-Node *new_node_ident(char *ident)
+// 変数を名前引きする
+// 見つからなかったら NULL を返します。
+LVar *find_lvar(Token *tok)
+{
+    for (LVar *var = locals; var != NULL; var = var->next)
+    {
+        if (var->len == tok->len && memcmp(tok->str, var->name, var->len) == 0)
+        {
+            return var;
+        }
+    }
+    return NULL;
+}
+
+Node *new_node_ident(Token *ident)
 {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
-    node->offset = (token->str[0] - 'a' + 1) * 8; // a なら 8, b なら 16……とオフセット値を増やす
+
+    LVar *lvar = find_lvar(ident);
+    if (lvar != NULL)
+    {
+        // 存在済みの識別子
+        node->offset = lvar->offset;
+    }
+    else
+    {
+        // 新しい識別子を割り当てる
+        lvar = calloc(1, sizeof(LVar));
+        lvar->next = locals; // 新しいものを先頭にする
+        lvar->name = ident->str;
+        lvar->len = ident->len;
+
+        if (locals == NULL)
+        {
+            lvar->offset = 8; // 最初の値
+        }
+        else
+        {
+            lvar->offset = locals->offset + 8; // オフセットは増やしていく
+        }
+
+        node->offset = lvar->offset;
+        locals = lvar;
+    }
+
     return node;
 }
 
@@ -228,10 +293,10 @@ Node *primary()
         return node;
     }
 
-    if (token->kind == TK_IDENT)
+    Token *tok = consume_ident();
+    if (tok != NULL)
     {
-        Node *node = new_node_ident(token->str);
-        return node;
+        return new_node_ident(token);
     }
 
     return new_node_num(expect_number());

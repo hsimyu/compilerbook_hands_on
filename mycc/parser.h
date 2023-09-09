@@ -30,4 +30,5 @@ struct Node
     int offset;    // kind が ND_LVAR の場合のみ: ローカル変数のベースポインタからのオフセット値
 };
 
+// トークン列をパースします。
 Node **parse();
