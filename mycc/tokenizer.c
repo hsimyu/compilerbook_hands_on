@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -24,6 +25,19 @@ const char *tokenKindToString(TokenKind kind)
     }
 
     return "Unknown";
+}
+
+// 次の識別子トークンの文字列長を調べます。
+int count_identifier_length(char *str)
+{
+    int length = 0;
+    char c = str[length];
+    while ('a' <= c && c <= 'z')
+    {
+        length++;
+        c = str[length];
+    }
+    return length;
 }
 
 // 次のトークンの文字列長を調べます。
@@ -70,8 +84,9 @@ void tokenize(char *p)
 
         if ('a' <= *p && *p <= 'z')
         {
-            // 識別子は 1 文字固定
-            cur = new_token(TK_IDENT, cur, p++, 1);
+            int token_length = count_identifier_length(p);
+            cur = new_token(TK_IDENT, cur, p, token_length);
+            p = p + token_length;
             continue;
         }
 
