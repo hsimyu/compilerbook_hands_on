@@ -35,6 +35,13 @@ void gen(Node *node)
         printf("  mov [rax], rdi\n"); // 変数アドレスに評価値を格納
         printf("  push rdi\n");       // 代入式の評価値は代入結果とするので、rdi をスタックに積む
         return;
+    case ND_RETURN:
+        gen(node->lhs);
+        printf("  pop rax\n");      // 左辺の評価値を取り出す
+        printf("  mov rsp, rbp\n"); // エピローグ
+        printf("  pop rbp\n");
+        printf("  ret\n");
+        return;
     }
 
     gen(node->lhs);

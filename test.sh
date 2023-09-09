@@ -37,5 +37,7 @@ assert 1 '4 > 2;'
 assert 1 '4 >= 4;'
 assert 0 '(20 + 3 - 40) >= -4;'
 assert 2 '1;2;'
+assert 2 'a=1;b=2;'
+assert 3 'a=1;b=2;c=a+b;'
 
 echo OK
