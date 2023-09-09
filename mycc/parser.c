@@ -150,7 +150,6 @@ Node *new_node_ident(Token *ident)
         {
             lvar->offset = locals->offset + 8; // オフセットは増やしていく
         }
-
         node->offset = lvar->offset;
         locals = lvar;
     }
@@ -316,7 +315,7 @@ Node *primary()
     Token *tok = consume_ident();
     if (tok != NULL)
     {
-        return new_node_ident(token);
+        return new_node_ident(tok);
     }
 
     return new_node_num(expect_number());

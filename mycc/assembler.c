@@ -21,21 +21,26 @@ void gen(Node *node)
     case ND_NUM:
         printf("  push %d\n", node->val);
         return;
-    case ND_LVAR:                     // ローカル変数の参照: スタックトップに評価値を積む
+    case ND_LVAR: // ローカル変数の参照: スタックトップに評価値を積む
+        printf("# LVAR BEGIN\n");
         gen_lval(node);               // node が示す変数のアドレスをスタックに積む命令を生成
         printf("  pop rax\n");        // 変数アドレスを取り出す
         printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
         printf("  push rax\n");       // 取り出した値をスタックに push する
+        printf("# LVAR END\n");
         return;
     case ND_ASSIGN:
+        printf("# ASSIGN BEGIN\n");
         gen_lval(node->lhs);          // 左辺が示す変数のアドレスをスタックに積む
         gen(node->rhs);               // 右辺の評価値をスタックに積む
         printf("  pop rdi\n");        // 右辺の評価値を取り出す
         printf("  pop rax\n");        // 変数アドレスを取り出す
         printf("  mov [rax], rdi\n"); // 変数アドレスに評価値を格納
         printf("  push rdi\n");       // 代入式の評価値は代入結果とするので、rdi をスタックに積む
+        printf("# ASSIGN END\n");
         return;
     case ND_RETURN:
+        printf("# RETURN\n");
         gen(node->lhs);
         printf("  pop rax\n");      // 左辺の評価値を取り出す
         printf("  mov rsp, rbp\n"); // エピローグ
@@ -53,32 +58,38 @@ void gen(Node *node)
     switch (node->kind)
     {
     case ND_EQ:
+        printf("# EQ\n");
         printf("  cmp rax, rdi\n");
         printf("  sete al\n");       // al は rax の下位 8 ビット
         printf("  movzb rax, al\n"); // 残り 56 ビットをクリア
         break;
     case ND_NE:
+        printf("# NE\n");
         printf("  cmp rax, rdi\n");
         printf("  setne al\n");
         printf("  movzb rax, al\n");
         break;
     case ND_LE:
+        printf("# LE\n");
         printf("  cmp rax, rdi\n");
         printf("  setle al\n");
         printf("  movzb rax, al\n");
         break;
     case ND_LT:
+        printf("# LT\n");
         printf("  cmp rax, rdi\n");
         printf("  setl al\n");
         printf("  movzb rax, al\n");
         break;
     case ND_GE:
+        printf("# LT\n");
         // GE, GT は rax, rdi を入れ替える
         printf("  cmp rdi, rax\n");
         printf("  setle al\n");
         printf("  movzb rax, al\n");
         break;
     case ND_GT:
+        printf("# GT\n");
         printf("  cmp rdi, rax\n");
         printf("  setl al\n");
         printf("  movzb rax, al\n");

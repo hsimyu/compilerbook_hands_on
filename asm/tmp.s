@@ -4,6 +4,7 @@ main:
   push rbp
   mov rbp, rsp
   sub rsp, 208
+# ASSIGN BEGIN
   mov rax, rbp
   sub rax, 8
   push rax
@@ -12,31 +13,21 @@ main:
   pop rax
   mov [rax], rdi
   push rdi
+# ASSIGN END
   pop rax
-  mov rax, rbp
-  sub rax, 8
-  push rax
-  push 2
-  pop rdi
-  pop rax
-  mov [rax], rdi
-  push rdi
-  pop rax
-  mov rax, rbp
-  sub rax, 8
-  push rax
+# ASSIGN BEGIN
   mov rax, rbp
   sub rax, 16
   push rax
-  pop rax
-  mov rax, [rax]
-  push rax
+# LVAR BEGIN
   mov rax, rbp
-  sub rax, 24
+  sub rax, 8
   push rax
   pop rax
   mov rax, [rax]
   push rax
+# LVAR END
+  push 20
   pop rdi
   pop rax
   add rax, rdi
@@ -45,6 +36,7 @@ main:
   pop rax
   mov [rax], rdi
   push rdi
+# ASSIGN END
   pop rax
   mov rsp, rbp
   pop rbp
