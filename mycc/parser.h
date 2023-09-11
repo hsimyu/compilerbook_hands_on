@@ -18,6 +18,7 @@ typedef enum
     ND_LVAR,   // ローカル変数
     ND_RETURN, // return
     ND_IF,     // if
+    ND_IFELSE, // if ... else
     ND_FOR,    // for
     ND_WHILE,  // while
 } NodeKind;
@@ -32,6 +33,7 @@ struct Node
     Node *rhs;     // 右辺
     int val;       // kind が ND_NUM の場合のみ
     int offset;    // kind が ND_LVAR の場合のみ: ローカル変数のベースポインタからのオフセット値
+    Node *els;     // kind が ND_IFELSE の場合のみ
 };
 
 // トークン列をパースします。

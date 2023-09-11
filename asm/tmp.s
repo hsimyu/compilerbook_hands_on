@@ -8,14 +8,14 @@ main:
   mov rax, rbp
   sub rax, 8
   push rax
-  push 1
+  push 0
   pop rdi
   pop rax
   mov [rax], rdi
   push rdi
 # ASSIGN END
   pop rax
-# IF
+# IFELSE
 # LVAR BEGIN
   mov rax, rbp
   sub rax, 8
@@ -34,9 +34,17 @@ main:
   push rax
   pop rax
   cmp rax, 0
-  je .Lend0
+  je .Lelse0
 # RETURN
   push 42
+  pop rax
+  mov rsp, rbp
+  pop rbp
+  ret
+  jmp .Lend0
+.Lelse0:
+# RETURN
+  push 35
   pop rax
   mov rsp, rbp
   pop rbp

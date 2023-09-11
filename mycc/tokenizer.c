@@ -24,6 +24,8 @@ const char *tokenKindToString(TokenKind kind)
         return "return";
     case TK_IF:
         return "if";
+    case TK_ELSE:
+        return "else";
     case TK_EOF:
         return "EOF";
     default:
@@ -103,6 +105,13 @@ void tokenize(char *p)
         {
             cur = new_token(TK_IF, cur, p, 2);
             p = p + 2;
+            continue;
+        }
+
+        if (strncmp(p, "else", 4) == 0 && !is_alphabet_or_number(p[4]))
+        {
+            cur = new_token(TK_ELSE, cur, p, 4);
+            p = p + 4;
             continue;
         }
 

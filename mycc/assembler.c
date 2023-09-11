@@ -59,6 +59,19 @@ void gen(Node *node)
         printf(".Lend%d:\n", label_index);     // ジャンプ用ラベル
         label_index++;
         return;
+    case ND_IFELSE:
+        printf("# IFELSE\n");
+        gen(node->lhs);                         // 条件式を評価
+        printf("  pop rax\n");                  // 条件の評価値を取り出す
+        printf("  cmp rax, 0\n");               // 条件の評価値が 0 かどうか
+        printf("  je .Lelse%d\n", label_index); // 評価値が 0 なら else へ飛ぶ
+        gen(node->rhs);                         // if ブロックの内部を評価
+        printf("  jmp .Lend%d\n", label_index); // end へ飛ぶ
+        printf(".Lelse%d:\n", label_index);     // else ラベル
+        gen(node->els);                         // else ブロックの内部を評価
+        printf(".Lend%d:\n", label_index);      // end ラベル
+        label_index++;
+        return;
     }
 
     gen(node->lhs);
