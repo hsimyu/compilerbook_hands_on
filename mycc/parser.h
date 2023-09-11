@@ -17,6 +17,9 @@ typedef enum
     ND_NUM,    // 整数
     ND_LVAR,   // ローカル変数
     ND_RETURN, // return
+    ND_IF,     // if
+    ND_FOR,    // for
+    ND_WHILE,  // while
 } NodeKind;
 
 typedef struct Node Node;

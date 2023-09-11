@@ -13,6 +13,8 @@ void gen_lval(Node *node)
     printf("  push rax\n");                  // rax の値 (= 変数のアドレス) をスタックに push する
 }
 
+int label_index = 0;
+
 // assembler
 void gen(Node *node)
 {
@@ -46,6 +48,16 @@ void gen(Node *node)
         printf("  mov rsp, rbp\n"); // エピローグ
         printf("  pop rbp\n");
         printf("  ret\n");
+        return;
+    case ND_IF:
+        printf("# IF\n");
+        gen(node->lhs);                        // 条件式を評価
+        printf("  pop rax\n");                 // 条件の評価値を取り出す
+        printf("  cmp rax, 0\n");              // 条件の評価値が 0 かどうか
+        printf("  je .Lend%d\n", label_index); // 評価値が 0 なら stmt を飛ばす
+        gen(node->rhs);                        // if ブロックの内部を評価
+        printf(".Lend%d:\n", label_index);     // ジャンプ用ラベル
+        label_index++;
         return;
     }
 

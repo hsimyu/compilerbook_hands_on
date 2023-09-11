@@ -190,6 +190,18 @@ Node *stmt()
     //   "for" "(" expr? ";" expr? ";" expr? ")" stmt |
     //   "return" expr ";" |
 
+    if (consume_control(TK_IF))
+    {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_IF;
+        expect("("); // if の評価式には () を要求する
+        // TODO: if の AST ノードはこれでいいのか？
+        node->lhs = expr();
+        expect(")");
+        node->rhs = stmt();
+        return node;
+    }
+
     if (consume_control(TK_RETURN))
     {
         Node *node = calloc(1, sizeof(Node));

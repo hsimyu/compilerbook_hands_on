@@ -22,11 +22,13 @@ const char *tokenKindToString(TokenKind kind)
         return "Number";
     case TK_RETURN:
         return "return";
+    case TK_IF:
+        return "if";
     case TK_EOF:
         return "EOF";
+    default:
+        return "Unknown";
     }
-
-    return "Unknown";
 }
 
 // 文字が英数字またはアンダースコアかどうかを判定します。
@@ -94,6 +96,13 @@ void tokenize(char *p)
         {
             cur = new_token(TK_RETURN, cur, p, 6);
             p = p + 6;
+            continue;
+        }
+
+        if (strncmp(p, "if", 2) == 0 && !is_alphabet_or_number(p[2]))
+        {
+            cur = new_token(TK_IF, cur, p, 2);
+            p = p + 2;
             continue;
         }
 
