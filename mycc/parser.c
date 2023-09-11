@@ -48,11 +48,11 @@ Token *consume_ident()
     return result;
 }
 
-// 次のトークンが return の場合は、トークンを 1 つ読み進めて true を返す。
+// 次のトークンが期待したトークンの場合は、トークンを 1 つ読み進めて true を返す。
 // それ以外の場合には false を返す。
-bool consume_return()
+bool consume_control(TokenKind kind)
 {
-    if (token->kind != TK_RETURN)
+    if (token->kind != kind)
         return false;
 
     token = token->next;
@@ -190,7 +190,7 @@ Node *stmt()
     //   "for" "(" expr? ";" expr? ";" expr? ")" stmt |
     //   "return" expr ";" |
 
-    if (consume_return())
+    if (consume_control(TK_RETURN))
     {
         Node *node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;

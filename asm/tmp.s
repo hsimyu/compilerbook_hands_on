@@ -38,6 +38,25 @@ main:
   push rdi
 # ASSIGN END
   pop rax
+# RETURN
+# LVAR BEGIN
+  mov rax, rbp
+  sub rax, 16
+  push rax
+  pop rax
+  mov rax, [rax]
+  push rax
+# LVAR END
+  push 43
+  pop rdi
+  pop rax
+  add rax, rdi
+  push rax
+  pop rax
+  mov rsp, rbp
+  pop rbp
+  ret
+  pop rax
   mov rsp, rbp
   pop rbp
   ret
