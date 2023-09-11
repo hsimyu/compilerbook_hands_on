@@ -158,7 +158,7 @@ Node *new_node_ident(Token *ident)
 }
 
 void program();
-Node *statement();
+Node *stmt();
 Node *assign();
 Node *expr();
 Node *equality();
@@ -172,18 +172,24 @@ Node *code[100]; // stmt の配列
 
 void program()
 {
-    // program = statement*
+    // program = stmt*
     int i = 0;
     while (!at_eof())
     {
-        code[i++] = statement();
+        code[i++] = stmt();
     }
     code[i] = NULL;
 }
 
-Node *statement()
+Node *stmt()
 {
-    // statement = expr ";" | "return" expr ";"
+    // stmt =
+    //   expr ";" |
+    //   "if" "(" expr ")" stmt ("else" stmt)? |
+    //   "while" "(" expr ")" stmt
+    //   "for" "(" expr? ";" expr? ";" expr? ")" stmt |
+    //   "return" expr ";" |
+
     if (consume_return())
     {
         Node *node = calloc(1, sizeof(Node));
