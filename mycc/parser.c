@@ -231,36 +231,36 @@ Node *stmt()
         node->kind = ND_FOR;
         expect("("); // for の評価式には () を要求する
 
-        if (!consume_reserved(';'))
+        if (!consume_reserved(";"))
         {
             // 次のトークンが ';' ではなかった場合
             // for (A; ...) の A
             node->lhs = expr();
-            expect(';'); // A の後には ; が来ていないといけない
+            expect(";"); // A の後には ; が来ていないといけない
         }
         else
         {
             node->lhs = NULL;
         }
 
-        if (!consume_reserved(';'))
+        if (!consume_reserved(";"))
         {
             // 次のトークンが ';' ではなかった場合
             // for (A; B; ...) の B
             node->opt_a = expr();
-            expect(';');
+            expect(";");
         }
         else
         {
             node->opt_a = NULL;
         }
 
-        if (!consume_reserved(')'))
+        if (!consume_reserved(")"))
         {
             // 次のトークンが ')' ではなかった場合
             // for (A; B; C) の C
             node->opt_b = expr();
-            expect(')');
+            expect(")");
         }
         else
         {
