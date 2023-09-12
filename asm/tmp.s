@@ -35,7 +35,7 @@ main:
   push rax
   pop rax
   cmp rax, 0
-  jmp .Lend0
+  je .Lend0
 # ASSIGN BEGIN
   mov rax, rbp
   sub rax, 8
