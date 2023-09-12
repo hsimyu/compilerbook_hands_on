@@ -25,7 +25,7 @@ LVar *locals;
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
 // それ以外の場合には false を返す
-bool consume(char *op)
+bool consume_reserved(char *op)
 {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
@@ -204,7 +204,7 @@ Node *stmt()
         {
             // else がある場合
             node->kind = ND_IFELSE;
-            node->els = stmt();
+            node->opt_a = stmt();
         }
         else
         {
@@ -221,6 +221,52 @@ Node *stmt()
         expect("("); // while の評価式には () を要求する
         node->lhs = expr();
         expect(")");
+        node->rhs = stmt();
+        return node;
+    }
+
+    if (consume_control(TK_FOR))
+    {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_FOR;
+        expect("("); // for の評価式には () を要求する
+
+        if (!consume_reserved(';'))
+        {
+            // 次のトークンが ';' ではなかった場合
+            // for (A; ...) の A
+            node->lhs = expr();
+            expect(';'); // A の後には ; が来ていないといけない
+        }
+        else
+        {
+            node->lhs = NULL;
+        }
+
+        if (!consume_reserved(';'))
+        {
+            // 次のトークンが ';' ではなかった場合
+            // for (A; B; ...) の B
+            node->opt_a = expr();
+            expect(';');
+        }
+        else
+        {
+            node->opt_a = NULL;
+        }
+
+        if (!consume_reserved(')'))
+        {
+            // 次のトークンが ')' ではなかった場合
+            // for (A; B; C) の C
+            node->opt_b = expr();
+            expect(')');
+        }
+        else
+        {
+            node->opt_b = NULL;
+        }
+
         node->rhs = stmt();
         return node;
     }
@@ -251,7 +297,7 @@ Node *assign()
     // assign = equality ("=" assign)?
     Node *node = equality();
 
-    if (consume("="))
+    if (consume_reserved("="))
     {
         return new_node(ND_ASSIGN, node, assign());
     }
@@ -266,9 +312,9 @@ Node *equality()
 
     for (;;)
     {
-        if (consume("=="))
+        if (consume_reserved("=="))
             node = new_node(ND_EQ, node, relational());
-        else if (consume("!="))
+        else if (consume_reserved("!="))
             node = new_node(ND_NE, node, relational());
         else
             return node;
@@ -282,13 +328,13 @@ Node *relational()
 
     for (;;)
     {
-        if (consume("<="))
+        if (consume_reserved("<="))
             node = new_node(ND_LE, node, add());
-        else if (consume("<"))
+        else if (consume_reserved("<"))
             node = new_node(ND_LT, node, add());
-        else if (consume(">="))
+        else if (consume_reserved(">="))
             node = new_node(ND_GE, node, add());
-        else if (consume(">"))
+        else if (consume_reserved(">"))
             node = new_node(ND_GT, node, add());
         else
             return node;
@@ -302,9 +348,9 @@ Node *add()
 
     for (;;)
     {
-        if (consume("+"))
+        if (consume_reserved("+"))
             node = new_node(ND_ADD, node, mul());
-        else if (consume("-"))
+        else if (consume_reserved("-"))
             node = new_node(ND_SUB, node, mul());
         else
             return node;
@@ -318,9 +364,9 @@ Node *mul()
 
     for (;;)
     {
-        if (consume("*"))
+        if (consume_reserved("*"))
             node = new_node(ND_MUL, node, unary());
-        else if (consume("/"))
+        else if (consume_reserved("/"))
             node = new_node(ND_DIV, node, unary());
         else
             return node;
@@ -330,12 +376,12 @@ Node *mul()
 Node *unary()
 {
     // unary = (("+" | "-")? unary) | primary
-    if (consume("+"))
+    if (consume_reserved("+"))
     {
         return unary();
     }
 
-    if (consume("-"))
+    if (consume_reserved("-"))
     {
         // 0 - primary の AST とする
         return new_node(ND_SUB, new_node_num(0), unary());
@@ -347,7 +393,7 @@ Node *unary()
 Node *primary()
 {
     // primary = num | ident | "(" expr ")"
-    if (consume("("))
+    if (consume_reserved("("))
     {
         Node *node = expr();
         expect(")"); // () で囲まれていなければエラー

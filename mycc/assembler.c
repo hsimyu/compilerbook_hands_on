@@ -18,6 +18,11 @@ int label_index = 0;
 // assembler
 void gen(Node *node)
 {
+    if (node == NULL)
+    {
+        return;
+    }
+
     switch (node->kind)
     {
     case ND_NUM:
@@ -68,7 +73,7 @@ void gen(Node *node)
         gen(node->rhs);                         // if ブロックの内部を評価
         printf("  jmp .Lend%d\n", label_index); // end へ飛ぶ
         printf(".Lelse%d:\n", label_index);     // else ラベル
-        gen(node->els);                         // else ブロックの内部を評価
+        gen(node->opt_a);                       // else ブロックの内部を評価
         printf(".Lend%d:\n", label_index);      // end ラベル
         label_index++;
         return;
@@ -81,6 +86,22 @@ void gen(Node *node)
         printf("  je .Lend%d\n", label_index);    // 0 なら end へ飛んで終了
         gen(node->rhs);                           // while ブロックの内部を評価
         printf("  pop rax\n");                    // rhs の評価値がスタックに積んであるので捨てる
+        printf("  jmp .Lbegin%d\n", label_index); // begin へ飛んでやり直し
+        printf(".Lend%d:\n", label_index);        // end ラベル
+        label_index++;
+        return;
+    case ND_FOR:
+        printf("# FOR\n");
+        gen(node->lhs);                           // for (A; B; C) の A を評価 (初期化)
+        printf(".Lbegin%d:\n", label_index);      // begin ラベル
+        gen(node->opt_a);                         // B を実行
+        printf("  pop rax\n");                    // B の評価値を取り出す
+        printf("  cmp rax, 0\n");                 // B の評価値が 0 かどうか
+        printf("  je .Lend%d\n", label_index);    // 0 なら end へ飛んで終了
+        gen(node->rhs);                           // for ブロックの内部を評価
+        printf("  pop rax\n");                    // stmt の評価値がスタックに積んであるので捨てる
+        gen(node->opt_b);                         // C を評価
+        printf("  pop rax\n");                    // C の評価値がスタックに積んであるので捨てる
         printf("  jmp .Lbegin%d\n", label_index); // begin へ飛んでやり直し
         printf(".Lend%d:\n", label_index);        // end ラベル
         label_index++;
