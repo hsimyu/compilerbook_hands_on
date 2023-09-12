@@ -214,6 +214,17 @@ Node *stmt()
         return node;
     }
 
+    if (consume_control(TK_WHILE))
+    {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_WHILE;
+        expect("("); // while の評価式には () を要求する
+        node->lhs = expr();
+        expect(")");
+        node->rhs = stmt();
+        return node;
+    }
+
     if (consume_control(TK_RETURN))
     {
         Node *node = calloc(1, sizeof(Node));

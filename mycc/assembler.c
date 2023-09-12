@@ -72,6 +72,19 @@ void gen(Node *node)
         printf(".Lend%d:\n", label_index);      // end ラベル
         label_index++;
         return;
+    case ND_WHILE:
+        printf("# WHILE\n");
+        printf(".Lbegin%d:\n", label_index);      // begin ラベル
+        gen(node->lhs);                           // 条件式を評価
+        printf("  pop rax\n");                    // 条件の評価値を取り出す
+        printf("  cmp rax, 0\n");                 // 条件の評価値が 0 かどうか
+        printf("  jmp .Lend%d\n", label_index);   // 0 なら end へ飛んで終了
+        gen(node->rhs);                           // while ブロックの内部を評価
+        printf("  pop rax\n");                    // rhs の評価値がスタックに積んであるので捨てる
+        printf("  jmp .Lbegin%d\n", label_index); // begin へ飛んでやり直し
+        printf(".Lend%d:\n", label_index);        // end ラベル
+        label_index++;
+        return;
     }
 
     gen(node->lhs);

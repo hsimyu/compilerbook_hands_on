@@ -43,5 +43,6 @@ assert 21 'a=1;b=a+20;'
 assert 64 'a=1;b=a+20;return b+43;'
 assert 42 'a=1;if (a==1) return 42;'
 assert 35 'a=0;if (a==1) return 42; else return 35;'
+assert 10 'a=1;while(a<=10)a=11;return a;'
 
 echo OK

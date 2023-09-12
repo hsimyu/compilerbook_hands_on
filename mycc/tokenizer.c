@@ -26,6 +26,10 @@ const char *tokenKindToString(TokenKind kind)
         return "if";
     case TK_ELSE:
         return "else";
+    case TK_WHILE:
+        return "while";
+    case TK_FOR:
+        return "for";
     case TK_EOF:
         return "EOF";
     default:
@@ -112,6 +116,20 @@ void tokenize(char *p)
         {
             cur = new_token(TK_ELSE, cur, p, 4);
             p = p + 4;
+            continue;
+        }
+
+        if (strncmp(p, "while", 5) == 0 && !is_alphabet_or_number(p[5]))
+        {
+            cur = new_token(TK_WHILE, cur, p, 5);
+            p = p + 5;
+            continue;
+        }
+
+        if (strncmp(p, "for", 3) == 0 && !is_alphabet_or_number(p[3]))
+        {
+            cur = new_token(TK_FOR, cur, p, 3);
+            p = p + 3;
             continue;
         }
 
