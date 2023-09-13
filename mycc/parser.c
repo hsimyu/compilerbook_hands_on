@@ -427,7 +427,7 @@ Node *primary()
 {
     // primary =
     //   num |
-    //   ident ("(" ")")? | // 引数なしの関数
+    //   ident ("(" expr? ("," expr)? ")")? |
     //  "(" expr ")"
     if (consume_reserved("("))
     {
@@ -441,9 +441,38 @@ Node *primary()
     {
         if (consume_reserved("("))
         {
-            expect(")");
-            return new_node_funccall(tok);
+            // 引数を評価
+            Node *node = new_node_funccall(tok);
+
+            if (consume_reserved(")"))
+            {
+                // 引数なしの呼び出し: f()
+                return node;
+            }
+
+            // 第一引数があるはず
+            node->next = expr();
+            Node *prev = node->next;
+
+            for (;;)
+            {
+                // 第一引数以降は , expr, expr, ...) で続く
+                // ) が発見されるまで続ける
+                if (consume_reserved(")"))
+                {
+                    prev->next = NULL;
+                    break;
+                }
+
+                expect(",");
+                prev->next = expr();
+                prev = prev->next;
+            }
+
+            return node;
         }
+
+        // 関数呼び出しでない
         return new_node_ident(tok);
     }
 

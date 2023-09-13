@@ -17,9 +17,10 @@ assert() {
 }
 
 # prepare
-cc -c test asm/test.c
-mv test.o asm/
-bazel run mycc
+cd asm
+cc -c test test.c
+cd ..
+bazel build mycc
 
 # test
 assert 0 "0;"
@@ -54,5 +55,8 @@ assert 11 'a=1;while(a<=10)a=11;return a;'
 assert 55 'a=0;for(b=1;b<=10;b=b+1)a=a+b;return a;'
 assert 8 'a=0;for(b=1;b<=2;b=b+1){a=a+b;a=a*2;} return a;'
 assert 0 'foo();'
+assert 1 'return arg1(1);'
+assert 4 'return arg2(1, 4);'
+assert 6 'return arg3(1, 2, 3);'
 
 echo OK

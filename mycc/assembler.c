@@ -107,6 +107,7 @@ void gen(Node *node)
         label_index++;
         return;
     case ND_BLOCK:
+    {
         printf("# {\n");
         Node *target = node;
         while (target->next != NULL)
@@ -117,11 +118,43 @@ void gen(Node *node)
         }
         printf("# }\n");
         return;
+    }
     case ND_FUNCCALL:
+    {
         printf("# FUNCCALL\n");
+
+        // 引数をスタックに積む
+        Node *target = node;
+        while (target->next != NULL)
+        {
+            gen(target->next);
+            target = target->next;
+        }
+
+        // x86-64 ABI:
+        // 関数呼び出し時に、rsp が 16 の倍数、つまり下位 4 ビットが 0000 である必要がある
+        printf("  mov rax, rsp\n");
+        printf("  and rax, 15\n"); // rax = rax & 0b00001111, ビットマスク
+        printf("  cmp rax, 0\n");  // ビットマスク結果が 0 なら rsp は 16 の倍数、そうでなければ 8 の倍数
+        printf("  je .Lcallb%d\n", label_index);
+
+        // rsp が 16 の倍数でない場合は呼び出し前後で rsp を調整する
+        printf(".Lcalla%d:\n", label_index);
+        printf("  sub rsp, 8\n");
         printf("  call %.*s\n", node->fname_len, node->fname);
-        printf("  pop rax\n"); // 評価値がスタックに積んであるので捨てる
+        printf("  add rsp, 8\n");
+        printf("  jmp .Lcallend%d\n", label_index);
+
+        // rsp が 16 の倍数の場合は、そのまま呼び出せる
+        printf(".Lcallb%d:\n", label_index);
+        // 関数をコール
+        printf("  call %.*s\n", node->fname_len, node->fname);
+        printf(".Lcallend%d:\n", label_index); // 終了ラベル
+        label_index++;
         return;
+    }
+    default:
+        break;
     }
 
     gen(node->lhs);
