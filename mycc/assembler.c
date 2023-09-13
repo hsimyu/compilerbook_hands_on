@@ -120,6 +120,7 @@ void gen(Node *node)
     case ND_FUNCCALL:
         printf("# FUNCCALL\n");
         printf("  call %.*s\n", node->fname_len, node->fname);
+        printf("  pop rax\n"); // 評価値がスタックに積んであるので捨てる
         return;
     }
 
