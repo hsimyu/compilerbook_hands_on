@@ -4,7 +4,7 @@ assert() {
     input="$2"
 
     ./bazel-bin/mycc/mycc "$input" > asm/tmp.s
-    cc -o outputs/tmp asm/tmp.s
+    cc -o outputs/tmp asm/tmp.s asm/test.o
     ./outputs/tmp
     actual="$?"
 
@@ -16,6 +16,12 @@ assert() {
     fi
 }
 
+# prepare
+cc -c test asm/test.c
+mv test.o asm/
+bazel run mycc
+
+# test
 assert 0 "0;"
 assert 42 "42;"
 assert 21 "5+20-4;"
@@ -47,5 +53,6 @@ assert 35 'a=0;if (a==1) return 42; else return 35;'
 assert 11 'a=1;while(a<=10)a=11;return a;'
 assert 55 'a=0;for(b=1;b<=10;b=b+1)a=a+b;return a;'
 assert 8 'a=0;for(b=1;b<=2;b=b+1){a=a+b;a=a*2;} return a;'
+assert 0 'foo();'
 
 echo OK
