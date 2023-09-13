@@ -35,7 +35,7 @@ main:
   mov rax, [rax]
   push rax
 # LVAR END
-  push 10
+  push 2
   pop rdi
   pop rax
 # LE
@@ -46,6 +46,7 @@ main:
   pop rax
   cmp rax, 0
   je .Lend0
+# {
 # ASSIGN BEGIN
   mov rax, rbp
   sub rax, 8
@@ -75,6 +76,29 @@ main:
   mov [rax], rdi
   push rdi
 # ASSIGN END
+# ASSIGN BEGIN
+  mov rax, rbp
+  sub rax, 8
+  push rax
+# LVAR BEGIN
+  mov rax, rbp
+  sub rax, 8
+  push rax
+  pop rax
+  mov rax, [rax]
+  push rax
+# LVAR END
+  push 2
+  pop rdi
+  pop rax
+  imul rax, rdi
+  push rax
+  pop rdi
+  pop rax
+  mov [rax], rdi
+  push rdi
+# ASSIGN END
+# }
   pop rax
 # ASSIGN BEGIN
   mov rax, rbp

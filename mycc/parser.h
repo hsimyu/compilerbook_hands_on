@@ -21,6 +21,7 @@ typedef enum
     ND_IFELSE, // if ... else
     ND_FOR,    // for
     ND_WHILE,  // while
+    ND_BLOCK,  // { ... }
 } NodeKind;
 
 typedef struct Node Node;
@@ -35,6 +36,7 @@ struct Node
     int offset;    // kind が ND_LVAR の場合のみ: ローカル変数のベースポインタからのオフセット値
     Node *opt_a;   // kind が ND_IFELSE, ND_FOR の場合のみ
     Node *opt_b;   // kind が ND_FOR の場合のみ
+    Node *next;    // kind が ND_BLOCK の場合のみ
 };
 
 // トークン列をパースします。

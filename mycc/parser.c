@@ -186,6 +186,7 @@ Node *stmt()
 {
     // stmt =
     //   expr ";" |
+    //   "{" stmt* "}" |
     //   "if" "(" expr ")" stmt ("else" stmt)? |
     //   "while" "(" expr ")" stmt
     //   "for" "(" expr? ";" expr? ";" expr? ")" stmt |
@@ -278,6 +279,29 @@ Node *stmt()
         node->lhs = expr(); // TODO: ここで expr を期待しているので "return;" とは書けない
         expect(";");        // ; で終わっていなければエラー
         return node;
+    }
+
+    if (consume_reserved("{"))
+    {
+        Node *root = calloc(1, sizeof(Node));
+        root->kind = ND_BLOCK;
+
+        Node *prev = root;
+        for (;;)
+        {
+            if (consume_reserved("}"))
+            {
+                // ブロック終了
+                prev->next = NULL;
+                break;
+            }
+
+            // root -> child1 -> child2 のように線形リストとしてぶら下げていく
+            Node *child = stmt();
+            prev->next = child;
+            prev = child;
+        }
+        return root;
     }
 
     Node *node = expr();

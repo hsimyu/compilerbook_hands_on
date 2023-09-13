@@ -106,6 +106,16 @@ void gen(Node *node)
         printf(".Lend%d:\n", label_index);        // end ラベル
         label_index++;
         return;
+    case ND_BLOCK:
+        printf("# {\n");
+        Node *target = node;
+        while (target->next != NULL)
+        {
+            gen(target->next);
+            target = target->next;
+        }
+        printf("# }\n");
+        return;
     }
 
     gen(node->lhs);

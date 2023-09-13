@@ -46,5 +46,6 @@ assert 42 'a=1;if (a==1) return 42;'
 assert 35 'a=0;if (a==1) return 42; else return 35;'
 assert 11 'a=1;while(a<=10)a=11;return a;'
 assert 55 'a=0;for(b=1;b<=10;b=b+1)a=a+b;return a;'
+assert 8 'a=0;for(b=1;b<=2;b=b+1){a=a+b;a=a*2;} return a;'
 
 echo OK
