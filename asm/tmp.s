@@ -76,6 +76,7 @@ main:
   mov [rax], rdi
   push rdi
 # ASSIGN END
+  pop rax
 # ASSIGN BEGIN
   mov rax, rbp
   sub rax, 8
@@ -98,6 +99,7 @@ main:
   mov [rax], rdi
   push rdi
 # ASSIGN END
+  pop rax
 # }
   pop rax
 # ASSIGN BEGIN

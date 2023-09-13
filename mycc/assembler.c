@@ -112,6 +112,7 @@ void gen(Node *node)
         while (target->next != NULL)
         {
             gen(target->next);
+            printf("  pop rax\n"); // 評価値がスタックに積んであるので捨てる
             target = target->next;
         }
         printf("# }\n");
