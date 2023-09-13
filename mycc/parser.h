@@ -3,25 +3,26 @@
 // parser
 typedef enum
 {
-    ND_ASSIGN, // =
-    ND_EQ,     // ==
-    ND_NE,     // !=
-    ND_LE,     // <=
-    ND_LT,     // <
-    ND_GE,     // >=
-    ND_GT,     // <
-    ND_ADD,    // +
-    ND_SUB,    // -
-    ND_MUL,    // *
-    ND_DIV,    // /
-    ND_NUM,    // 整数
-    ND_LVAR,   // ローカル変数
-    ND_RETURN, // return
-    ND_IF,     // if
-    ND_IFELSE, // if ... else
-    ND_FOR,    // for
-    ND_WHILE,  // while
-    ND_BLOCK,  // { ... }
+    ND_ASSIGN,   // =
+    ND_EQ,       // ==
+    ND_NE,       // !=
+    ND_LE,       // <=
+    ND_LT,       // <
+    ND_GE,       // >=
+    ND_GT,       // <
+    ND_ADD,      // +
+    ND_SUB,      // -
+    ND_MUL,      // *
+    ND_DIV,      // /
+    ND_NUM,      // 整数
+    ND_LVAR,     // ローカル変数
+    ND_RETURN,   // return
+    ND_IF,       // if
+    ND_IFELSE,   // if ... else
+    ND_FOR,      // for
+    ND_WHILE,    // while
+    ND_BLOCK,    // { ... }
+    ND_FUNCCALL, // f()
 } NodeKind;
 
 typedef struct Node Node;
@@ -37,6 +38,8 @@ struct Node
     Node *opt_a;   // kind が ND_IFELSE, ND_FOR の場合のみ
     Node *opt_b;   // kind が ND_FOR の場合のみ
     Node *next;    // kind が ND_BLOCK の場合のみ
+    char *fname;   // kind が ND_FUNCCALL の場合のみ
+    int fname_len; // kind が ND_FUNCCALL の場合のみ
 };
 
 // トークン列をパースします。

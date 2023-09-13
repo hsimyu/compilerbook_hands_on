@@ -157,6 +157,15 @@ Node *new_node_ident(Token *ident)
     return node;
 }
 
+Node *new_node_funccall(Token *ident)
+{
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_FUNCCALL;
+    node->fname = ident->str;
+    node->fname_len = ident->len;
+    return node;
+}
+
 void program();
 Node *stmt();
 Node *assign();
@@ -416,7 +425,10 @@ Node *unary()
 
 Node *primary()
 {
-    // primary = num | ident | "(" expr ")"
+    // primary =
+    //   num |
+    //   ident ("(" ")")? | // 引数なしの関数
+    //  "(" expr ")"
     if (consume_reserved("("))
     {
         Node *node = expr();
@@ -427,6 +439,11 @@ Node *primary()
     Token *tok = consume_ident();
     if (tok != NULL)
     {
+        if (consume_reserved("("))
+        {
+            expect(")");
+            return new_node_funccall(tok);
+        }
         return new_node_ident(tok);
     }
 

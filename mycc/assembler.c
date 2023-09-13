@@ -117,6 +117,10 @@ void gen(Node *node)
         }
         printf("# }\n");
         return;
+    case ND_FUNCCALL:
+        printf("# FUNCCALL\n");
+        printf("  call %.*s\n", node->fname_len, node->fname);
+        return;
     }
 
     gen(node->lhs);
