@@ -1,3 +1,5 @@
 **/bazel-*
 tmp
 outputs
+asm/test.o
+asm/tmp.s

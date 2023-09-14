@@ -125,6 +125,7 @@ void gen(Node *node)
 
         // 引数をスタックに積む
         Node *target = node;
+
         while (target->next != NULL)
         {
             gen(target->next);
@@ -150,6 +151,7 @@ void gen(Node *node)
         // 関数をコール
         printf("  call %.*s\n", node->fname_len, node->fname);
         printf(".Lcallend%d:\n", label_index); // 終了ラベル
+        printf("  push rax\n");                // 戻り値をスタックに積む
         label_index++;
         return;
     }
