@@ -126,10 +126,46 @@ void gen(Node *node)
         // 引数をスタックに積む
         Node *target = node;
 
+        int args_count = 0;
         while (target->next != NULL)
         {
+            // この実装だと、左から順に評価することになる
+            // 右から順に実行してスタックに乗せた方が一時退避が不要なので望ましい
             gen(target->next);
             target = target->next;
+            args_count++;
+        }
+
+        // 引数を呼び出しレジスタに格納 (浮動小数点数の時は使用レジスタが異なる)
+        // 1: rdi
+        // 2: rsi
+        // 3: rdx
+        // 4: rcx
+        // 5: r8
+        // 6: r9
+        // 以降: スタック
+        switch (args_count)
+        {
+        case 6:
+            printf("  pop r9\n");
+            // fallthrough
+        case 5:
+            printf("  pop r8\n");
+            // fallthrough
+        case 4:
+            printf("  pop rcx\n");
+            // fallthrough
+        case 3:
+            printf("  pop rdx\n");
+            // fallthrough
+        case 2:
+            printf("  pop rsi\n");
+            // fallthrough
+        case 1:
+            printf("  pop rdi\n");
+            break;
+        default:
+            break;
         }
 
         // x86-64 ABI:
