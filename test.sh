@@ -4,6 +4,7 @@ assert() {
     input="$2"
 
     ./bazel-bin/mycc/mycc "$input" > asm/tmp.s
+    mkdir -p outputs
     cc -o outputs/tmp asm/tmp.s asm/test.o
     ./outputs/tmp
     actual="$?"
