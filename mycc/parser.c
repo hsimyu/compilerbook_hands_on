@@ -98,6 +98,19 @@ int expect_number()
     return val;
 }
 
+// 次のトークンが数値の場合、トークンを 1 つ読み進めてその数値を返す。
+// それ以外の場合には、エラーを報告する。
+Token *expect_ident()
+{
+    if (token->kind != TK_IDENT)
+        error_at(token->str, "Invalid TokenKind: excected = 'Identifier', actual = '%s'",
+                 tokenKindToString(token->kind));
+
+    Token *result = token;
+    token = token->next;
+    return result;
+}
+
 // 入力の終わりかどうかを判定します。
 bool at_eof()
 {
@@ -178,7 +191,18 @@ Node *new_node_funccall(Token *ident)
     return node;
 }
 
+Node *new_node_funcdef(Token *ident)
+{
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_FUNCDEF;
+    node->fname = ident->str;
+    node->fname_len = ident->len;
+    // TODO: すでに存在済みの関数かどうか調べる
+    return node;
+}
+
 void program();
+Node *funcdef();
 Node *stmt();
 Node *block();
 Node *assign();
@@ -194,13 +218,28 @@ Node *code[100]; // stmt の配列
 
 void program()
 {
-    // program = stmt*
+    // プログラム == 関数定義の列ということにする
+    // program = funcdef*
     int i = 0;
     while (!at_eof())
     {
-        code[i++] = stmt();
+        code[i++] = funcdef();
     }
     code[i] = NULL;
+}
+
+Node *funcdef()
+{
+    // funcdef = ident "(" ident? ("," ident)? ")" block
+    Token *tok = expect_ident();
+    Node *f = new_node_funcdef(tok);
+    expect("(");
+
+    // TODO: 関数の仮引数に対応
+
+    expect(")");
+    f->lhs = block();
+    return f;
 }
 
 // 文
@@ -319,26 +358,26 @@ Node *block()
     // block = "{" stmt* "}"
     expect("{");
 
-        Node *root = calloc(1, sizeof(Node));
-        root->kind = ND_BLOCK;
+    Node *root = calloc(1, sizeof(Node));
+    root->kind = ND_BLOCK;
 
-        Node *prev = root;
-        for (;;)
+    Node *prev = root;
+    for (;;)
+    {
+        if (consume_reserved("}"))
         {
-            if (consume_reserved("}"))
-            {
-                // ブロック終了
-                prev->next = NULL;
-                break;
-            }
-
-            // root -> child1 -> child2 のように線形リストとしてぶら下げていく
-            Node *child = stmt();
-            prev->next = child;
-            prev = child;
+            // ブロック終了
+            prev->next = NULL;
+            break;
         }
 
-        return root;
+        // root -> child1 -> child2 のように線形リストとしてぶら下げていく
+        Node *child = stmt();
+        prev->next = child;
+        prev = child;
+    }
+
+    return root;
 }
 
 // 式

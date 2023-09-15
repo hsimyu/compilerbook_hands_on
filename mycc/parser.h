@@ -22,7 +22,8 @@ typedef enum
     ND_FOR,      // for
     ND_WHILE,    // while
     ND_BLOCK,    // { ... }
-    ND_FUNCCALL, // f()
+    ND_FUNCCALL, // call f()
+    ND_FUNCDEF,  // def f()
 } NodeKind;
 
 typedef struct Node Node;

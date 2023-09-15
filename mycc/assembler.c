@@ -25,6 +25,24 @@ void gen(Node *node)
 
     switch (node->kind)
     {
+    case ND_FUNCDEF:
+        printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
+
+        // プロローグ
+        printf("  push rbp\n");     // 関数呼び出し時の rbp をスタックに保存
+        printf("  mov rbp, rsp\n"); // rbp に現在のスタックトップのアドレスを保存
+        printf("  sub rsp, 16\n");  // 必要なローカル変数の分だけスタックを確保
+        // TODO: スタック確保サイズを引数、変数に合わせて適切な数にする
+
+        // ブロックを評価
+        gen(node->lhs);
+
+        // エピローグ
+        printf("  pop rax\n");      // スタックトップの評価値を rax へ取り出す
+        printf("  mov rsp, rbp\n"); // rsp を rbp まで戻す
+        printf("  pop rbp\n");      // 前の rbp を復元
+        printf("  ret\n");          // リターンアドレスへ戻る
+        return;
     case ND_NUM:
         printf("  push %d\n", node->val);
         return;
@@ -113,8 +131,14 @@ void gen(Node *node)
         while (target->next != NULL)
         {
             gen(target->next);
-            printf("  pop rax\n"); // 評価値がスタックに積んであるので捨てる
             target = target->next;
+
+            if (target->next != NULL)
+            {
+                // 最後の一つの文以外の評価値は不要
+                // スタックに積んであるので捨てる
+                printf("  pop rax\n");
+            }
         }
         printf("# }\n");
         return;
