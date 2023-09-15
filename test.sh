@@ -1,7 +1,7 @@
 #!/bin/bash
-assert_main() {
+assert() {
     expected="$1"
-    input="main(){ $2 }"
+    input="$2"
 
     ./bazel-bin/mycc/mycc "$input" > asm/tmp.s
     mkdir -p outputs
@@ -15,6 +15,10 @@ assert_main() {
         echo "$input => $expected expected, but got $actual"
         exit 1
     fi
+}
+
+assert_main() {
+    assert "$1" "main(){ $2 }"
 }
 
 # prepare
@@ -59,5 +63,6 @@ assert_main 0 'foo();'
 assert_main 1 'return arg1(1);'
 assert_main 5 'return arg2(1, 4);'
 assert_main 6 'return arg3(1, 2, 3);'
+assert 70 'foo() {return 42;} main(){ return foo() + 28; }'
 
 echo OK
