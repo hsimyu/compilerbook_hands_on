@@ -73,6 +73,18 @@ void expect(char *op)
     token = token->next;
 }
 
+// 次のトークンが期待している予約語かどうかを返す。
+// トークンは進めない
+bool peek_reserved(char *op)
+{
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len ||
+        memcmp(token->str, op, token->len))
+        return false;
+
+    return true;
+}
+
 // 次のトークンが数値の場合、トークンを 1 つ読み進めてその数値を返す。
 // それ以外の場合には、エラーを報告する。
 int expect_number()
@@ -168,6 +180,7 @@ Node *new_node_funccall(Token *ident)
 
 void program();
 Node *stmt();
+Node *block();
 Node *assign();
 Node *expr();
 Node *equality();
@@ -290,8 +303,22 @@ Node *stmt()
         return node;
     }
 
-    if (consume_reserved("{"))
+    if (peek_reserved("{"))
     {
+        return block();
+    }
+
+    Node *node = expr();
+    expect(";"); // ; で終わっていなければエラー
+    return node;
+}
+
+// 文ブロック
+Node *block()
+{
+    // block = "{" stmt* "}"
+    expect("{");
+
         Node *root = calloc(1, sizeof(Node));
         root->kind = ND_BLOCK;
 
@@ -310,12 +337,8 @@ Node *stmt()
             prev->next = child;
             prev = child;
         }
-        return root;
-    }
 
-    Node *node = expr();
-    expect(";"); // ; で終わっていなければエラー
-    return node;
+        return root;
 }
 
 // 式
