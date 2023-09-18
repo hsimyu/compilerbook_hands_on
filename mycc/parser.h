@@ -41,6 +41,7 @@ struct Node
     Node *next;    // kind が ND_BLOCK の場合のみ
     char *fname;   // kind が ND_FUNCCALL の場合のみ
     int fname_len; // kind が ND_FUNCCALL の場合のみ
+    int arg_count; // kind が ND_FUNCDEF の場合のみ
 };
 
 // トークン列をパースします。

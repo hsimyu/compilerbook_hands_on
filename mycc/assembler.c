@@ -29,10 +29,51 @@ void gen(Node *node)
         printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
 
         // プロローグ
-        printf("  push rbp\n");     // 関数呼び出し時の rbp をスタックに保存
-        printf("  mov rbp, rsp\n"); // rbp に現在のスタックトップのアドレスを保存
-        printf("  sub rsp, 16\n");  // 必要なローカル変数の分だけスタックを確保
-        // TODO: スタック確保サイズを引数、変数に合わせて適切な数にする
+        printf("  push rbp\n");                         // 関数呼び出し時の rbp をスタックに保存
+        printf("  mov rbp, rsp\n");                     // rbp に現在のスタックトップのアドレスを保存
+        printf("  sub rsp, %d\n", 8 * node->arg_count); // 必要なローカル変数の分だけスタックを確保
+
+        // レジスタからスタックへ仮引数を割り当てる
+        // 1: rdi
+        // 2: rsi
+        // 3: rdx
+        // 4: rcx
+        // 5: r8
+        // 6: r9
+        // 以降: スタック
+        int arg_count = 0;
+        Node *arg = node->next;
+        while (arg != NULL)
+        {
+            arg_count++;
+            switch (arg_count)
+            {
+            case 1:
+                printf("  mov [rbp-8], rdi\n");
+                break;
+            case 2:
+                printf("  mov [rbp-16], rsi\n");
+                break;
+            case 3:
+                printf("  mov [rbp-24], rdx\n");
+                break;
+            case 4:
+                printf("  mov [rbp-32], rcx\n");
+                break;
+            case 5:
+                printf("  mov [rbp-40], r8\n");
+                break;
+            case 6:
+                printf("  mov [rbp-48], r9\n");
+                break;
+            default:
+                // 7 以上はスタックから取り出す
+                printf("  pop rax\n");
+                printf("  mov [rbp-%d], rax\n", arg_count * 8);
+                break;
+            }
+            arg = arg->next;
+        }
 
         // ブロックを評価
         gen(node->lhs);

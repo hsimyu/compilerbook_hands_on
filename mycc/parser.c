@@ -153,6 +153,7 @@ Node *new_node_ident(Token *ident)
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
 
+    // TODO: 変数にスコープを持たせる
     LVar *lvar = find_lvar(ident);
     if (lvar != NULL)
     {
@@ -235,7 +236,28 @@ Node *funcdef()
     Node *f = new_node_funcdef(tok);
     expect("(");
 
-    // TODO: 関数の仮引数に対応
+    // 関数の仮引数をパース
+    tok = consume_ident();
+    if (tok != NULL)
+    {
+        // 仮引数列は f->next 以下に繋げていくとする
+        // TODO: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
+        // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
+        Node *arg = new_node_ident(tok);
+        f->next = arg;
+        f->arg_count++;
+
+        // 第 2 引数以降
+        while (consume_reserved(","))
+        {
+            tok = expect_ident();
+            arg->next = new_node_ident(tok);
+            arg = arg->next;
+            f->arg_count++;
+        }
+
+        arg->next = NULL;
+    }
 
     expect(")");
     f->lhs = block();
