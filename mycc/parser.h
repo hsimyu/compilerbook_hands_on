@@ -26,22 +26,33 @@ typedef enum
     ND_FUNCDEF,  // def f()
 } NodeKind;
 
+typedef struct LVar LVar;
+struct LVar
+{
+    LVar *next; // 次の変数または NULL
+    char *name; // 変数の名前
+    int len;    // 長さ
+    int offset; // RBP からのオフセット
+};
+
 typedef struct Node Node;
 
 // AST のノード
 struct Node
 {
-    NodeKind kind; // 種類
-    Node *lhs;     // 左辺
-    Node *rhs;     // 右辺
-    int val;       // kind が ND_NUM の場合のみ
-    int offset;    // kind が ND_LVAR の場合のみ: ローカル変数のベースポインタからのオフセット値
-    Node *opt_a;   // kind が ND_IFELSE, ND_FOR の場合のみ
-    Node *opt_b;   // kind が ND_FOR の場合のみ
-    Node *next;    // kind が ND_BLOCK の場合のみ
-    char *fname;   // kind が ND_FUNCCALL の場合のみ
-    int fname_len; // kind が ND_FUNCCALL の場合のみ
-    int arg_count; // kind が ND_FUNCDEF の場合のみ
+    NodeKind kind;    // 種類
+    Node *lhs;        // 左辺
+    Node *rhs;        // 右辺
+    int val;          // kind が ND_NUM の場合のみ
+    int offset;       // kind が ND_LVAR の場合のみ: ローカル変数のベースポインタからのオフセット値
+    Node *opt_a;      // kind が ND_IFELSE, ND_FOR の場合のみ
+    Node *opt_b;      // kind が ND_FOR の場合のみ
+    Node *next;       // kind が ND_BLOCK の場合のみ
+    char *fname;      // kind が ND_FUNCCALL の場合のみ
+    int fname_len;    // kind が ND_FUNCCALL の場合のみ
+    int arg_count;    // kind が ND_FUNCDEF の場合のみ
+    LVar *locals;     // kind が ND_FUNCDEF の場合のみ: ローカル変数のリスト
+    int locals_count; // kind が ND_FUNCDEF の場合のみ: ローカル変数の数
 };
 
 // トークン列をパースします。

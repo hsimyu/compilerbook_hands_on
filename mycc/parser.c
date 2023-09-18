@@ -11,17 +11,8 @@
 
 extern Token *token;
 
-typedef struct LVar LVar;
-struct LVar
-{
-    LVar *next; // 次の変数または NULL
-    char *name; // 変数の名前
-    int len;    // 長さ
-    int offset; // RBP からのオフセット
-};
-
-// ローカル変数のリスト
-LVar *locals;
+// 現在定義中の関数ノード
+Node *active_func;
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
 // それ以外の場合には false を返す
@@ -138,7 +129,7 @@ Node *new_node_num(int val)
 // 見つからなかったら NULL を返します。
 LVar *find_lvar(Token *tok)
 {
-    for (LVar *var = locals; var != NULL; var = var->next)
+    for (LVar *var = active_func->locals; var != NULL; var = var->next)
     {
         if (var->len == tok->len && memcmp(tok->str, var->name, var->len) == 0)
         {
@@ -153,7 +144,6 @@ Node *new_node_ident(Token *ident)
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
 
-    // TODO: 変数にスコープを持たせる
     LVar *lvar = find_lvar(ident);
     if (lvar != NULL)
     {
@@ -164,20 +154,21 @@ Node *new_node_ident(Token *ident)
     {
         // 新しい識別子を割り当てる
         lvar = calloc(1, sizeof(LVar));
-        lvar->next = locals; // 新しいものを先頭にする
+        lvar->next = active_func->locals; // 新しいものを先頭にする
         lvar->name = ident->str;
         lvar->len = ident->len;
 
-        if (locals == NULL)
+        if (active_func->locals == NULL)
         {
             lvar->offset = 8; // 最初の値
         }
         else
         {
-            lvar->offset = locals->offset + 8; // オフセットは増やしていく
+            lvar->offset = active_func->locals->offset + 8; // オフセットは増やしていく
         }
         node->offset = lvar->offset;
-        locals = lvar;
+        active_func->locals = lvar;
+        active_func->locals_count++;
     }
 
     return node;
@@ -234,6 +225,11 @@ Node *funcdef()
     // funcdef = ident "(" ident? ("," ident)? ")" block
     Token *tok = expect_ident();
     Node *f = new_node_funcdef(tok);
+
+    // active_func を切り替える
+    Node *previous_func = active_func; // 復元用
+    active_func = f;
+
     expect("(");
 
     // 関数の仮引数をパース
@@ -261,6 +257,8 @@ Node *funcdef()
 
     expect(")");
     f->lhs = block();
+
+    active_func = previous_func; // 元に戻す
     return f;
 }
 

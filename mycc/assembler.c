@@ -29,9 +29,9 @@ void gen(Node *node)
         printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
 
         // プロローグ
-        printf("  push rbp\n");                         // 関数呼び出し時の rbp をスタックに保存
-        printf("  mov rbp, rsp\n");                     // rbp に現在のスタックトップのアドレスを保存
-        printf("  sub rsp, %d\n", 8 * node->arg_count); // 必要なローカル変数の分だけスタックを確保
+        printf("  push rbp\n");                            // 関数呼び出し時の rbp をスタックに保存
+        printf("  mov rbp, rsp\n");                        // rbp に現在のスタックトップのアドレスを保存
+        printf("  sub rsp, %d\n", 8 * node->locals_count); // 必要なローカル変数の分だけスタックを確保 (仮引数分もローカル変数に含まれている)
 
         // レジスタからスタックへ仮引数を割り当てる
         // 1: rdi
@@ -293,7 +293,7 @@ void gen(Node *node)
         printf("  movzb rax, al\n");
         break;
     case ND_GE:
-        printf("# LT\n");
+        printf("# GE\n");
         // GE, GT は rax, rdi を入れ替える
         printf("  cmp rdi, rax\n");
         printf("  setle al\n");
