@@ -148,6 +148,7 @@ void gen(Node *node)
         printf("  jmp .Lbegin%d\n", label_index); // begin へ飛んでやり直し
         printf(".Lend%d:\n", label_index);        // end ラベル
         label_index++;
+        printf("# WHILE END\n");
         return;
     case ND_FOR:
         printf("# FOR\n");
@@ -174,10 +175,15 @@ void gen(Node *node)
             gen(target->next);
             target = target->next;
 
-            if (target->next != NULL)
+            if (target->next != NULL &&
+                target->kind != ND_WHILE &&
+                target->kind != ND_FOR &&
+                target->kind != ND_IF &&
+                target->kind != ND_IFELSE)
             {
                 // 最後の一つの文以外の評価値は不要
                 // スタックに積んであるので捨てる
+                // 制御構文の場合はスタックに評価値がないので不要
                 printf("  pop rax\n");
             }
         }
