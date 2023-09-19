@@ -141,7 +141,7 @@ void tokenize(char *p)
             continue;
         }
 
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == '!' || *p == '<' || *p == '>' || *p == ';' || *p == '{' || *p == '}' || *p == ',')
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == '!' || *p == '<' || *p == '>' || *p == ';' || *p == '{' || *p == '}' || *p == ',' || *p == '&')
         {
             int token_length = count_token_length(p);
             cur = new_token(TK_RESERVED, cur, p, token_length);

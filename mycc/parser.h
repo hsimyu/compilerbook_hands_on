@@ -12,8 +12,10 @@ typedef enum
     ND_GT,       // <
     ND_ADD,      // +
     ND_SUB,      // -
-    ND_MUL,      // *
+    ND_MUL,      // 二項*
     ND_DIV,      // /
+    ND_DEREF,    // 単項*
+    ND_ADDR,     // 単項&
     ND_NUM,      // 整数
     ND_LVAR,     // ローカル変数
     ND_RETURN,   // return

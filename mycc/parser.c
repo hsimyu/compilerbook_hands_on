@@ -490,7 +490,28 @@ Node *mul()
 
 Node *unary()
 {
-    // unary = (("+" | "-")? unary) | primary
+    // unary =
+    //   "+"? unary |
+    //   "-"? unary |
+    //   "*" unary |
+    //   "&" unary |
+    //   primary
+    if (consume_reserved("*"))
+    {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_DEREF;
+        node->lhs = unary();
+        return node;
+    }
+
+    if (consume_reserved("&"))
+    {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_ADDR;
+        node->lhs = unary();
+        return node;
+    }
+
     if (consume_reserved("+"))
     {
         return unary();

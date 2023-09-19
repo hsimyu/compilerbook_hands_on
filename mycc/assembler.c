@@ -87,6 +87,15 @@ void gen(Node *node)
     case ND_NUM:
         printf("  push %d\n", node->val);
         return;
+    case ND_ADDR:
+        gen_lval(node->lhs); // lhs が示す変数のアドレスをスタックに積む
+        return;
+    case ND_DEREF:
+        gen(node->lhs);               // lhs が示す変数のアドレスをスタックに積む
+        printf("  pop rax\n");        // 変数アドレスを取り出す
+        printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
+        printf("  push rax\n");       // 取り出した値をスタックに push する
+        return;
     case ND_LVAR: // ローカル変数の参照: スタックトップに評価値を積む
         printf("# LVAR BEGIN\n");
         gen_lval(node);               // node が示す変数のアドレスをスタックに積む命令を生成
