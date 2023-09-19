@@ -39,6 +39,20 @@ Token *consume_ident()
     return result;
 }
 
+// 次のトークンが期待した型識別子の場合は、トークンを 1 つ読み進めてそのトークンを返す。
+// それ以外の場合には NULL を返す。
+Token *consume_type_ident(char *tname)
+{
+    if (token->kind != TK_IDENT ||
+        strlen(tname) != token->len ||
+        memcmp(token->str, tname, token->len))
+        return NULL;
+
+    Token *result = token;
+    token = token->next;
+    return result;
+}
+
 // 次のトークンが期待したトークンの場合は、トークンを 1 つ読み進めて true を返す。
 // それ以外の場合には false を返す。
 bool consume_control(TokenKind kind)
@@ -280,12 +294,22 @@ Node *funcdef()
 Node *stmt()
 {
     // stmt =
-    //   expr ";" |
+    //   "int" ident ";" |
     //   "{" stmt* "}" |
     //   "if" "(" expr ")" stmt ("else" stmt)? |
     //   "while" "(" expr ")" stmt
     //   "for" "(" expr? ";" expr? ";" expr? ")" stmt |
     //   "return" expr ";" |
+    //   expr ";"
+
+    Token *type_token = consume_type_ident("int");
+    if (type_token != NULL)
+    {
+        Token *ident = expect_ident();
+        Node *node = new_node_ident_declare(ident);
+        expect(";");
+        return node;
+    }
 
     if (consume_control(TK_IF))
     {

@@ -190,7 +190,8 @@ void gen(Node *node)
                 target->kind != ND_WHILE &&
                 target->kind != ND_FOR &&
                 target->kind != ND_IF &&
-                target->kind != ND_IFELSE)
+                target->kind != ND_IFELSE &&
+                target->kind != ND_LVAR_DEC)
             {
                 // 最後の一つの文以外の評価値は不要
                 // スタックに積んであるので捨てる
