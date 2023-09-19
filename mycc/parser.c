@@ -103,13 +103,27 @@ int expect_number()
     return val;
 }
 
-// 次のトークンが数値の場合、トークンを 1 つ読み進めてその数値を返す。
+// 次のトークンが識別子の場合、トークンを 1 つ読み進めてそのトークンを返す。
 // それ以外の場合には、エラーを報告する。
 Token *expect_ident()
 {
     if (token->kind != TK_IDENT)
         error_at(token->str, "Invalid TokenKind: excected = 'Identifier', actual = '%s'",
                  tokenKindToString(token->kind));
+
+    Token *result = token;
+    token = token->next;
+    return result;
+}
+
+// 次のトークンが期待した識別子の場合、トークンを 1 つ読み進めてそのトークンを返す。
+// それ以外の場合には、エラーを報告する。
+Token *expect_type_ident(char *tname)
+{
+    if (token->kind != TK_IDENT ||
+        strlen(tname) != token->len ||
+        memcmp(token->str, tname, token->len))
+        error_at(token->str, "Invalid TokenKind: excected = '%s', actual = '%.*s'", tname, token->len, token->str);
 
     Token *result = token;
     token = token->next;
@@ -261,12 +275,13 @@ Node *funcdef()
     expect("(");
 
     // 関数の仮引数をパース
-    tok = consume_ident();
+    // 仮引数は int x, int y のような形式で定義される
+    tok = consume_type_ident("int");
     if (tok != NULL)
     {
-        // 仮引数列は f->next 以下に繋げていくとする
-        // TODO: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
+        // NOTE: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
         // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
+        tok = expect_ident();
         Node *arg = new_node_ident_declare(tok);
         f->next = arg;
         f->arg_count++;
@@ -274,6 +289,9 @@ Node *funcdef()
         // 第 2 引数以降
         while (consume_reserved(","))
         {
+            // 型名は今は読み捨てる
+            expect_type_ident("int");
+
             tok = expect_ident();
             arg->next = new_node_ident_declare(tok);
             arg = arg->next;
@@ -283,6 +301,7 @@ Node *funcdef()
         arg->next = NULL;
     }
 
+    // NOTE: ここで expect するのは型名または ) なので、expect(")") だとエラーメッセージが不適切
     expect(")");
     f->lhs = block();
 
