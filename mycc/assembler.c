@@ -5,7 +5,7 @@
 
 void gen_lval(Node *node)
 {
-    if (node->kind != ND_LVAR)
+    if (node->kind != ND_LVAR_REF)
         error("Failed to generate assembly: left-hand side of assign node is not Identifier: %c", node->kind);
 
     printf("  mov rax, rbp\n");              // rax に関数トップの値を入れて、
@@ -96,7 +96,9 @@ void gen(Node *node)
         printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
         printf("  push rax\n");       // 取り出した値をスタックに push する
         return;
-    case ND_LVAR: // ローカル変数の参照: スタックトップに評価値を積む
+    case ND_LVAR_DEC: // ローカル変数の宣言
+        return;
+    case ND_LVAR_REF: // ローカル変数の参照: スタックトップに評価値を積む
         printf("# LVAR BEGIN\n");
         gen_lval(node);               // node が示す変数のアドレスをスタックに積む命令を生成
         printf("  pop rax\n");        // 変数アドレスを取り出す

@@ -17,7 +17,8 @@ typedef enum
     ND_DEREF,    // 単項*
     ND_ADDR,     // 単項&
     ND_NUM,      // 整数
-    ND_LVAR,     // ローカル変数
+    ND_LVAR_REF, // ローカル変数
+    ND_LVAR_DEC, // ローカル変数
     ND_RETURN,   // return
     ND_IF,       // if
     ND_IFELSE,   // if ... else

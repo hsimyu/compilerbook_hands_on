@@ -139,37 +139,51 @@ LVar *find_lvar(Token *tok)
     return NULL;
 }
 
-Node *new_node_ident(Token *ident)
+Node *new_node_ident_ref(Token *ident)
 {
     Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_LVAR;
+    node->kind = ND_LVAR_REF;
+
+    LVar *lvar = find_lvar(ident);
+    if (lvar == NULL)
+    {
+        error_at(token->str - 1, "Undefined local variable is used: '%.*s'", ident->len, ident->str);
+    }
+
+    // 存在済みの識別子
+    node->offset = lvar->offset;
+    return node;
+}
+
+Node *new_node_ident_declare(Token *ident)
+{
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR_DEC;
 
     LVar *lvar = find_lvar(ident);
     if (lvar != NULL)
     {
-        // 存在済みの識別子
-        node->offset = lvar->offset;
+        // 存在済みの識別子ならエラー
+        error_at(token->str - 1, "Duplicate variable declaration: '%.*s'", ident->len, ident->str);
+    }
+
+    // 新しい識別子を割り当てる
+    lvar = calloc(1, sizeof(LVar));
+    lvar->next = active_func->locals; // 新しいものを先頭にする
+    lvar->name = ident->str;
+    lvar->len = ident->len;
+
+    if (active_func->locals == NULL)
+    {
+        lvar->offset = 8; // 最初の値
     }
     else
     {
-        // 新しい識別子を割り当てる
-        lvar = calloc(1, sizeof(LVar));
-        lvar->next = active_func->locals; // 新しいものを先頭にする
-        lvar->name = ident->str;
-        lvar->len = ident->len;
-
-        if (active_func->locals == NULL)
-        {
-            lvar->offset = 8; // 最初の値
-        }
-        else
-        {
-            lvar->offset = active_func->locals->offset + 8; // オフセットは増やしていく
-        }
-        node->offset = lvar->offset;
-        active_func->locals = lvar;
-        active_func->locals_count++;
+        lvar->offset = active_func->locals->offset + 8; // オフセットは増やしていく
     }
+    node->offset = lvar->offset;
+    active_func->locals = lvar;
+    active_func->locals_count++;
 
     return node;
 }
@@ -239,7 +253,7 @@ Node *funcdef()
         // 仮引数列は f->next 以下に繋げていくとする
         // TODO: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
         // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
-        Node *arg = new_node_ident(tok);
+        Node *arg = new_node_ident_ref(tok);
         f->next = arg;
         f->arg_count++;
 
@@ -247,7 +261,7 @@ Node *funcdef()
         while (consume_reserved(","))
         {
             tok = expect_ident();
-            arg->next = new_node_ident(tok);
+            arg->next = new_node_ident_ref(tok);
             arg = arg->next;
             f->arg_count++;
         }
@@ -576,7 +590,7 @@ Node *primary()
         }
 
         // 関数呼び出しでない
-        return new_node_ident(tok);
+        return new_node_ident_ref(tok);
     }
 
     return new_node_num(expect_number());
