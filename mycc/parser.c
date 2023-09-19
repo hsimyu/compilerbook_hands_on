@@ -264,7 +264,11 @@ void program()
 
 Node *funcdef()
 {
-    // funcdef = ident "(" ident? ("," ident)? ")" block
+    // funcdef = "int" ident "(" ("int" ident)? ("," "int" ident)? ")" block
+
+    // 返り値の型: 今は読み捨てる
+    expect_type_ident("int");
+
     Token *tok = expect_ident();
     Node *f = new_node_funcdef(tok);
 
