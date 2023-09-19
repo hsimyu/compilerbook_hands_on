@@ -253,7 +253,7 @@ Node *funcdef()
         // 仮引数列は f->next 以下に繋げていくとする
         // TODO: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
         // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
-        Node *arg = new_node_ident_ref(tok);
+        Node *arg = new_node_ident_declare(tok);
         f->next = arg;
         f->arg_count++;
 
@@ -261,7 +261,7 @@ Node *funcdef()
         while (consume_reserved(","))
         {
             tok = expect_ident();
-            arg->next = new_node_ident_ref(tok);
+            arg->next = new_node_ident_declare(tok);
             arg = arg->next;
             f->arg_count++;
         }
