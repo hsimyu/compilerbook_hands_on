@@ -14,6 +14,9 @@ extern Token *token;
 // 現在定義中の関数ノード
 Node *active_func;
 
+// 組み込み型のリスト
+Type type_list[100];
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
 // それ以外の場合には false を返す
 bool consume_reserved(char *op)
@@ -153,6 +156,84 @@ Node *new_node_num(int val)
     return node;
 }
 
+Type *find_type_impl(TypeKind kind, int ptr_depth)
+{
+    for (int i = 0; i < 100; i++)
+    {
+        Type *info = &type_list[i];
+        if (info->kind == kind && info->ptr_depth == ptr_depth)
+        {
+            // 定義済みなので返す
+            return &type_list[i];
+        }
+    }
+
+    // 発見できなかった
+    return NULL;
+}
+
+Type *new_type_impl(TypeKind kind, int ptr_depth)
+{
+    for (int i = 0; i < 100; i++)
+    {
+        if (type_list[i].kind == TYPE_INVALID)
+        {
+            type_list[i].kind = kind;
+            type_list[i].ptr_depth = ptr_depth;
+            return &type_list[i];
+        }
+    }
+
+    error_at(token->str, "Max Type Count Exceed.");
+    return NULL;
+}
+
+// 型名を名前引きする
+// 見つからなかったら NULL を返します。
+Type *search_type(char *tname, int tname_len)
+{
+    if (tname_len > 3)
+    {
+        int ptr_depth = tname_len - 3;
+        Type *tdef = find_type_impl(TYPE_PTR, ptr_depth);
+        if (tdef != NULL)
+        {
+            // 定義済みなので返す
+            return tdef;
+        }
+
+        // 定義されていないので生成する
+        // 深度を一つ減らして検索または生成する
+        Type *ptr_to = search_type(tname, tname_len - 1);
+        Type *newdef = new_type_impl(TYPE_PTR, ptr_depth);
+        newdef->ptr_to = ptr_to;
+        return tdef;
+    }
+    else
+    {
+        if (strncmp(tname, "int", 3) != 0)
+        {
+            // int 以外なら Error
+            error_at(token->str, "Invalid type: %.*s", tname_len, tname);
+        }
+
+        Type *int_def = find_type_impl(TYPE_INT, 0);
+        if (int_def != NULL)
+        {
+            // int が定義済みなので返す
+            return int_def;
+        }
+        else
+        {
+            // 型定義されている数を超えたので、定義して返す
+            Type *newdef = new_type_impl(TYPE_INT, 0);
+            return newdef;
+        }
+    }
+
+    return NULL;
+}
+
 // 変数を名前引きする
 // 見つからなかったら NULL を返します。
 LVar *find_lvar(Token *tok)
@@ -201,9 +282,8 @@ Node *new_node_ident_declare(Token *ident)
     lvar->name = ident->str;
     lvar->len = ident->len;
 
-    struct Type ty;
-    ty.ty = TYPE_INT;
-    lvar->ty = ty;
+    // TODO: 型名に応じた内容を検索するようにする
+    lvar->ty = search_type("int", 3);
 
     if (active_func->locals == NULL)
     {
