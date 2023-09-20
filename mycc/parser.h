@@ -29,13 +29,25 @@ typedef enum
     ND_FUNCDEF,  // def f()
 } NodeKind;
 
+struct Type
+{
+    enum
+    {
+        TYPE_INT,
+        TYPE_PTR
+    } ty;
+
+    struct Type *ptr_to; // ポインタ型の指し先の型
+};
+
 typedef struct LVar LVar;
 struct LVar
 {
-    LVar *next; // 次の変数または NULL
-    char *name; // 変数の名前
-    int len;    // 長さ
-    int offset; // RBP からのオフセット
+    LVar *next;     // 次の変数または NULL
+    char *name;     // 変数の名前
+    struct Type ty; // 変数の型
+    int len;        // 長さ
+    int offset;     // RBP からのオフセット
 };
 
 typedef struct Node Node;

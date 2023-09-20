@@ -201,6 +201,10 @@ Node *new_node_ident_declare(Token *ident)
     lvar->name = ident->str;
     lvar->len = ident->len;
 
+    struct Type ty;
+    ty.ty = TYPE_INT;
+    lvar->ty = ty;
+
     if (active_func->locals == NULL)
     {
         lvar->offset = 8; // 最初の値
