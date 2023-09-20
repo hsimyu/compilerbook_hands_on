@@ -190,11 +190,10 @@ Type *new_type_impl(TypeKind kind, int ptr_depth)
 
 // 型名を名前引きする
 // 見つからなかったら NULL を返します。
-Type *search_type(char *tname, int tname_len)
+Type *search_type(char *tname, int ptr_depth)
 {
-    if (tname_len > 3)
+    if (ptr_depth > 0)
     {
-        int ptr_depth = tname_len - 3;
         Type *tdef = find_type_impl(TYPE_PTR, ptr_depth);
         if (tdef != NULL)
         {
@@ -204,7 +203,7 @@ Type *search_type(char *tname, int tname_len)
 
         // 定義されていないので生成する
         // 深度を一つ減らして検索または生成する
-        Type *ptr_to = search_type(tname, tname_len - 1);
+        Type *ptr_to = search_type(tname, ptr_depth - 1);
         Type *newdef = new_type_impl(TYPE_PTR, ptr_depth);
         newdef->ptr_to = ptr_to;
         return tdef;
@@ -214,7 +213,7 @@ Type *search_type(char *tname, int tname_len)
         if (strncmp(tname, "int", 3) != 0)
         {
             // int 以外なら Error
-            error_at(token->str, "Invalid type: %.*s", tname_len, tname);
+            error_at(token->str, "Invalid type name.");
         }
 
         Type *int_def = find_type_impl(TYPE_INT, 0);
@@ -264,7 +263,7 @@ Node *new_node_ident_ref(Token *ident)
     return node;
 }
 
-Node *new_node_ident_declare(Token *ident)
+Node *new_node_ident_declare(Token *ident, int ptr_depth)
 {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR_DEC;
@@ -282,9 +281,7 @@ Node *new_node_ident_declare(Token *ident)
     lvar->name = ident->str;
     lvar->len = ident->len;
 
-    // TODO: 型名に応じた内容を検索するようにする
-    lvar->ty = search_type("int", 3);
-
+    lvar->ty = search_type("int", ptr_depth);
     if (active_func->locals == NULL)
     {
         lvar->offset = 8; // 最初の値
@@ -370,7 +367,7 @@ Node *funcdef()
         // NOTE: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
         // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
         tok = expect_ident();
-        Node *arg = new_node_ident_declare(tok);
+        Node *arg = new_node_ident_declare(tok, 0);
         f->next = arg;
         f->arg_count++;
 
@@ -381,7 +378,7 @@ Node *funcdef()
             expect_type_ident("int");
 
             tok = expect_ident();
-            arg->next = new_node_ident_declare(tok);
+            arg->next = new_node_ident_declare(tok, 0);
             arg = arg->next;
             f->arg_count++;
         }
@@ -401,7 +398,7 @@ Node *funcdef()
 Node *stmt()
 {
     // stmt =
-    //   "int" ident ";" |
+    //   "int" "*"* ident ";" |
     //   "{" stmt* "}" |
     //   "if" "(" expr ")" stmt ("else" stmt)? |
     //   "while" "(" expr ")" stmt
@@ -412,8 +409,15 @@ Node *stmt()
     Token *type_token = consume_type_ident("int");
     if (type_token != NULL)
     {
+        // ポインタ定義数をカウント
+        int ptr_depth = 0;
+        while (consume_reserved("*"))
+        {
+            ptr_depth++;
+        }
+
         Token *ident = expect_ident();
-        Node *node = new_node_ident_declare(ident);
+        Node *node = new_node_ident_declare(ident, ptr_depth);
         expect(";");
         return node;
     }
@@ -730,6 +734,12 @@ Node *primary()
 // パースの開始
 Node **parse()
 {
+    // 組み込み型リストを初期化
+    for (int i = 0; i < 100; i++)
+    {
+        type_list[i].kind = TYPE_INVALID;
+    }
+
     program();
     return code;
 }

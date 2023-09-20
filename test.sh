@@ -66,5 +66,6 @@ assert_main 6 'return arg3(1, 2, 3);'
 assert 70 'int foo() {return 42;} int main(){ return foo() + 28; }'
 assert 6 'int foo(int a, int b, int c) {return a + b + c;} int main(){ return foo(1, 2, 3); }'
 assert 42 'int main(){ int a; int b; a=42; b=&a; return *b; }'
+assert 1 'int main(){ int a; int* b; int******** c; return 1; }'
 
 echo OK
