@@ -51,6 +51,7 @@ void gen(Node *node)
     switch (node->kind)
     {
     case ND_FUNCDEF:
+        printf("# FUNCDEF\n");
         printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
 
         // プロローグ
@@ -109,12 +110,16 @@ void gen(Node *node)
         printf("  mov rsp, rbp\n"); // rsp を rbp まで戻す
         printf("  pop rbp\n");      // 前の rbp を復元
         printf("  ret\n");          // リターンアドレスへ戻る
+        printf("# FUNCDEF END\n");
         return;
     case ND_NUM:
+        printf("# NUM\n");
         printf("  push %d\n", node->val);
         return;
     case ND_ADDR:
+        printf("# ADDR\n");
         gen_lval(node->lhs); // lhs が示す変数のアドレスをスタックに積む
+        printf("# ADDR END\n");
         return;
     case ND_DEREF:
         // ここに到達するのは右辺値としてのデリファレンス
@@ -159,6 +164,7 @@ void gen(Node *node)
         printf("  je .Lend%d\n", label_index); // 評価値が 0 なら stmt を飛ばす
         gen(node->rhs);                        // if ブロックの内部を評価
         printf(".Lend%d:\n", label_index);     // ジャンプ用ラベル
+        printf("# IF END\n");
         label_index++;
         return;
     case ND_IFELSE:
@@ -172,6 +178,7 @@ void gen(Node *node)
         printf(".Lelse%d:\n", label_index);     // else ラベル
         gen(node->opt_a);                       // else ブロックの内部を評価
         printf(".Lend%d:\n", label_index);      // end ラベル
+        printf("# IFELSE END\n");
         label_index++;
         return;
     case ND_WHILE:
@@ -202,6 +209,7 @@ void gen(Node *node)
         printf("  pop rax\n");                    // C の評価値がスタックに積んであるので捨てる
         printf("  jmp .Lbegin%d\n", label_index); // begin へ飛んでやり直し
         printf(".Lend%d:\n", label_index);        // end ラベル
+        printf("# FOR END\n");
         label_index++;
         return;
     case ND_BLOCK:
@@ -305,6 +313,7 @@ void gen(Node *node)
         break;
     }
 
+    printf("# BINARY OP\n");
     gen(node->lhs);
     gen(node->rhs);
 
@@ -351,9 +360,11 @@ void gen(Node *node)
         printf("  movzb rax, al\n");
         break;
     case ND_ADD:
+        printf("# ADD\n");
         printf("  add rax, rdi\n");
         break;
     case ND_ADDPTR:
+        printf("# ADDPTR\n");
         // ポインタに対する加算なので、rdi の値をポインタが指す型のサイズだけ倍する
         // 左辺が int* -> sizeof(int): 4
         // 左辺が int** -> sizeof(int*): 8
@@ -361,17 +372,21 @@ void gen(Node *node)
         printf("  add rax, rdi\n");
         break;
     case ND_SUB:
+        printf("# SUB\n");
         printf("  sub rax, rdi\n");
         break;
     case ND_SUBPTR:
+        printf("# SUBPTR\n");
         // ポインタに対する減算なので、rdi の値をポインタが指す型のサイズだけ倍する
         printf("  imul rdi, 4\n");
         printf("  sub rax, rdi\n");
         break;
     case ND_MUL:
+        printf("# MUL\n");
         printf("  imul rax, rdi\n");
         break;
     case ND_DIV:
+        printf("# DIV\n");
         // imul は rdx と rax を取って 128 ビットの値とし、
         // 引数のレジスタで割り、
         // 商を rax に、余りを rdx にセットする命令
@@ -385,4 +400,5 @@ void gen(Node *node)
     }
 
     printf("  push rax\n");
+    printf("# BINARY OP END\n");
 }
