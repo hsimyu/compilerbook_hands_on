@@ -11,7 +11,9 @@ typedef enum
     ND_GE,       // >=
     ND_GT,       // <
     ND_ADD,      // +
+    ND_ADDPTR,   // ポインタに対する +
     ND_SUB,      // -
+    ND_SUBPTR,   // ポインタに対する -
     ND_MUL,      // 二項*
     ND_DIV,      // /
     ND_DEREF,    // 単項*

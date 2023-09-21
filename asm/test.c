@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 int foo()
 {
@@ -22,4 +23,16 @@ int arg3(int a, int b, int c)
 {
     printf("a = %d, b = %d, c = %d\n", a, b, c);
     return a + b + c;
+}
+
+int alloc4(int **outAddress, int a, int b, int c, int d)
+{
+    printf("alloc4\n");
+    int *ptr = calloc(4, sizeof(int));
+    ptr[0] = a;
+    ptr[1] = b;
+    ptr[2] = c;
+    ptr[3] = d;
+    *outAddress = ptr;
+    return 0;
 }

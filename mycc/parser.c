@@ -613,6 +613,33 @@ Node *relational()
     }
 }
 
+// アドレスを返す性質があるノードかどうかを判定します。
+bool is_address(Node *node)
+{
+    if (node == NULL)
+    {
+        return false;
+    }
+
+    if (node->kind == ND_ADDR)
+    {
+        return true;
+    }
+
+    if (node->kind == ND_LVAR_REF && node->var_info->ty->kind == TYPE_PTR)
+    {
+        return true;
+    }
+
+    if (node->kind == ND_DEREF)
+    {
+        return is_address(node->lhs);
+    }
+
+    // TODO: (&a + 1) のような形式に対応
+    return false;
+}
+
 Node *add()
 {
     // add = mul ("+" mul | "-" mul)*
@@ -621,11 +648,31 @@ Node *add()
     for (;;)
     {
         if (consume_reserved("+"))
-            node = new_node(ND_ADD, node, mul());
+        {
+            if (is_address(node))
+            {
+                node = new_node(ND_ADDPTR, node, mul());
+            }
+            else
+            {
+                node = new_node(ND_ADD, node, mul());
+            }
+        }
         else if (consume_reserved("-"))
-            node = new_node(ND_SUB, node, mul());
+        {
+            if (is_address(node))
+            {
+                node = new_node(ND_SUBPTR, node, mul());
+            }
+            else
+            {
+                node = new_node(ND_SUB, node, mul());
+            }
+        }
         else
+        {
             return node;
+        }
     }
 }
 

@@ -68,5 +68,6 @@ assert 6 'int foo(int a, int b, int c) {return a + b + c;} int main(){ return fo
 assert 42 'int main(){ int a; int b; a=42; b=&a; return *b; }'
 assert 1 'int main(){ int a; int* b; int******** c; return 1; }'
 assert 3 'int main(){ int x; int *y; y = &x; *y = 3; return x; }'
+assert 4 'int main(){ int *p; alloc4(&p, 1, 2, 4, 8); int *q; q = p + 2; return *q; }'
 
 echo OK

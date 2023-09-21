@@ -353,7 +353,19 @@ void gen(Node *node)
     case ND_ADD:
         printf("  add rax, rdi\n");
         break;
+    case ND_ADDPTR:
+        // ポインタに対する加算なので、rdi の値をポインタが指す型のサイズだけ倍する
+        // 左辺が int* -> sizeof(int): 4
+        // 左辺が int** -> sizeof(int*): 8
+        printf("  imul rdi, 4\n");
+        printf("  add rax, rdi\n");
+        break;
     case ND_SUB:
+        printf("  sub rax, rdi\n");
+        break;
+    case ND_SUBPTR:
+        // ポインタに対する減算なので、rdi の値をポインタが指す型のサイズだけ倍する
+        printf("  imul rdi, 4\n");
         printf("  sub rax, rdi\n");
         break;
     case ND_MUL:
