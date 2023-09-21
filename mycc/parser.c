@@ -206,7 +206,7 @@ Type *search_type(char *tname, int ptr_depth)
         Type *ptr_to = search_type(tname, ptr_depth - 1);
         Type *newdef = new_type_impl(TYPE_PTR, ptr_depth);
         newdef->ptr_to = ptr_to;
-        return tdef;
+        return newdef;
     }
     else
     {
@@ -282,6 +282,10 @@ Node *new_node_ident_declare(Token *ident, int ptr_depth)
     lvar->len = ident->len;
 
     lvar->ty = search_type("int", ptr_depth);
+    if (lvar->ty == NULL)
+    {
+        error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
+    }
 
     int address_size = 8;
     if (active_func->locals == NULL)
