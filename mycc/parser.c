@@ -259,7 +259,7 @@ Node *new_node_ident_ref(Token *ident)
     }
 
     // 存在済みの識別子
-    node->offset = lvar->offset;
+    node->var_info = lvar;
     return node;
 }
 
@@ -290,7 +290,7 @@ Node *new_node_ident_declare(Token *ident, int ptr_depth)
     {
         lvar->offset = active_func->locals->offset + 8; // オフセットは増やしていく
     }
-    node->offset = lvar->offset;
+    node->var_info = lvar;
     active_func->locals = lvar;
     active_func->locals_count++;
 

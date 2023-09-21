@@ -63,7 +63,7 @@ struct Node
     Node *lhs;        // 左辺
     Node *rhs;        // 右辺
     int val;          // kind が ND_NUM の場合のみ
-    int offset;       // kind が ND_LVAR の場合のみ: ローカル変数のベースポインタからのオフセット値
+    LVar *var_info;   // kind が ND_LVAR の場合のみ
     Node *opt_a;      // kind が ND_IFELSE, ND_FOR の場合のみ
     Node *opt_b;      // kind が ND_FOR の場合のみ
     Node *next;       // kind が ND_BLOCK の場合のみ

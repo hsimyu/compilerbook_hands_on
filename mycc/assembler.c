@@ -3,14 +3,39 @@
 #include "util.h"
 #include "parser.h"
 
+void gen_rval(Node *node);
+
+// 左辺値の評価: 変数参照が指しているアドレスを評価
 void gen_lval(Node *node)
 {
-    if (node->kind != ND_LVAR_REF)
-        error("Failed to generate assembly: left-hand side of assign node is not Identifier: %c", node->kind);
+    if (node->kind != ND_LVAR_REF && node->kind != ND_DEREF)
+        error("Failed to generate assembly: left-hand side of assign node is not Identifier or Dereference: %c", node->kind);
 
-    printf("  mov rax, rbp\n");              // rax に関数トップの値を入れて、
-    printf("  sub rax, %d\n", node->offset); // 変数名に対応するオフセット値だけ rax を下げる
-    printf("  push rax\n");                  // rax の値 (= 変数のアドレス) をスタックに push する
+    if (node->kind == ND_DEREF)
+    {
+        printf("# DEREF (lhs) BEGIN\n");
+        // 左辺値としての変数参照にデリファレンスが指定されているので、
+        // lhs に格納されている値を右辺値として評価して返す
+        // lhs にはアドレス値が入っているので、その評価値はアドレスになる
+        gen_rval(node->lhs);
+        printf("# DEREF END\n");
+    }
+    else
+    {
+        // 左辺値としての変数参照なので、アドレスを積んで返す
+        printf("  mov rax, rbp\n");                        // rax に関数トップの値を入れて、
+        printf("  sub rax, %d\n", node->var_info->offset); // 変数名に対応するオフセット値だけ rax を下げる
+        printf("  push rax\n");                            // rax の値 (= 変数のアドレス) をスタックに push する
+    }
+}
+
+// 右辺値の評価: 変数参照が指しているアドレスに格納されている値を評価
+void gen_rval(Node *node)
+{
+    gen_lval(node);               // node が示す変数のアドレスをスタックに積む命令を生成
+    printf("  pop rax\n");        // 変数アドレスを取り出す
+    printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
+    printf("  push rax\n");       // 取り出した値をスタックに push する
 }
 
 int label_index = 0;
@@ -91,24 +116,25 @@ void gen(Node *node)
         gen_lval(node->lhs); // lhs が示す変数のアドレスをスタックに積む
         return;
     case ND_DEREF:
-        gen(node->lhs);               // lhs が示す変数のアドレスをスタックに積む
-        printf("  pop rax\n");        // 変数アドレスを取り出す
-        printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
+        // ここに到達するのは右辺値としてのデリファレンス
+        // (左辺値として代入対象になる時、ND_ASSIGN から gen_lval に飛ぶ)
+        printf("# DEREF (rhs) BEGIN\n");
+        gen_rval(node->lhs);          // lhs の指し先の値がスタックに積まれている
+        printf("  pop rax\n");        // ポインタの指し先アドレスを取り出す
+        printf("  mov rax, [rax]\n"); // 指し先に格納されている値を取り出す
         printf("  push rax\n");       // 取り出した値をスタックに push する
+        printf("# DEREF END\n");
         return;
     case ND_LVAR_DEC: // ローカル変数の宣言
         return;
     case ND_LVAR_REF: // ローカル変数の参照: スタックトップに評価値を積む
         printf("# LVAR BEGIN\n");
-        gen_lval(node);               // node が示す変数のアドレスをスタックに積む命令を生成
-        printf("  pop rax\n");        // 変数アドレスを取り出す
-        printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
-        printf("  push rax\n");       // 取り出した値をスタックに push する
+        gen_rval(node);
         printf("# LVAR END\n");
         return;
     case ND_ASSIGN:
         printf("# ASSIGN BEGIN\n");
-        gen_lval(node->lhs);          // 左辺が示す変数のアドレスをスタックに積む
+        gen_lval(node->lhs);          // 左辺が示すアドレスをスタックに積む
         gen(node->rhs);               // 右辺の評価値をスタックに積む
         printf("  pop rdi\n");        // 右辺の評価値を取り出す
         printf("  pop rax\n");        // 変数アドレスを取り出す
