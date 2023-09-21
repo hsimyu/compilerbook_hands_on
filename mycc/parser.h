@@ -59,19 +59,19 @@ typedef struct Node Node;
 // AST のノード
 struct Node
 {
-    NodeKind kind;    // 種類
-    Node *lhs;        // 左辺
-    Node *rhs;        // 右辺
-    int val;          // kind が ND_NUM の場合のみ
-    LVar *var_info;   // kind が ND_LVAR の場合のみ
-    Node *opt_a;      // kind が ND_IFELSE, ND_FOR の場合のみ
-    Node *opt_b;      // kind が ND_FOR の場合のみ
-    Node *next;       // kind が ND_BLOCK の場合のみ
-    char *fname;      // kind が ND_FUNCCALL の場合のみ
-    int fname_len;    // kind が ND_FUNCCALL の場合のみ
-    int arg_count;    // kind が ND_FUNCDEF の場合のみ
-    LVar *locals;     // kind が ND_FUNCDEF の場合のみ: ローカル変数のリスト
-    int locals_count; // kind が ND_FUNCDEF の場合のみ: ローカル変数の数
+    NodeKind kind;   // 種類
+    Node *lhs;       // 左辺
+    Node *rhs;       // 右辺
+    int val;         // kind が ND_NUM の場合のみ
+    LVar *var_info;  // kind が ND_LVAR の場合のみ
+    Node *opt_a;     // kind が ND_IFELSE, ND_FOR の場合のみ
+    Node *opt_b;     // kind が ND_FOR の場合のみ
+    Node *next;      // kind が ND_BLOCK の場合のみ
+    char *fname;     // kind が ND_FUNCCALL の場合のみ
+    int fname_len;   // kind が ND_FUNCCALL の場合のみ
+    int arg_count;   // kind が ND_FUNCDEF の場合のみ
+    LVar *locals;    // kind が ND_FUNCDEF の場合のみ: ローカル変数のリスト
+    int locals_size; // kind が ND_FUNCDEF の場合のみ: ローカル変数の合計サイズ
 };
 
 // トークン列をパースします。

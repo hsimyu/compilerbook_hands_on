@@ -282,17 +282,19 @@ Node *new_node_ident_declare(Token *ident, int ptr_depth)
     lvar->len = ident->len;
 
     lvar->ty = search_type("int", ptr_depth);
+
+    int address_size = 8;
     if (active_func->locals == NULL)
     {
-        lvar->offset = 8; // 最初の値
+        lvar->offset = address_size; // 最初の値
     }
     else
     {
-        lvar->offset = active_func->locals->offset + 8; // オフセットは増やしていく
+        lvar->offset = active_func->locals->offset + address_size; // オフセットは増やしていく
     }
     node->var_info = lvar;
     active_func->locals = lvar;
-    active_func->locals_count++;
+    active_func->locals_size += address_size;
 
     return node;
 }
@@ -356,6 +358,8 @@ Node *funcdef()
     // active_func を切り替える
     Node *previous_func = active_func; // 復元用
     active_func = f;
+    active_func->locals = NULL;
+    active_func->locals_size = 0;
 
     expect("(");
 
