@@ -734,7 +734,7 @@ Node *primary()
 {
     // primary =
     //   num |
-    //   ident ("(" expr? ("," expr)? ")")? |
+    //   ident ("(" expr? ("," expr)* ")")? |
     //  "(" expr ")"
     if (consume_reserved("("))
     {
@@ -750,30 +750,32 @@ Node *primary()
         {
             // 引数を評価
             Node *node = new_node_funccall(tok);
-
             if (consume_reserved(")"))
             {
+                node->call_args = NULL;
                 // 引数なしの呼び出し: f()
                 return node;
             }
 
             // 第一引数があるはず
-            node->next = expr();
-            Node *prev = node->next;
+            node->call_args = expr();
+            Node *target = node->call_args;
 
+            int c = 1;
             for (;;)
             {
                 // 第一引数以降は , expr, expr, ...) で続く
                 // ) が発見されるまで続ける
                 if (consume_reserved(")"))
                 {
-                    prev->next = NULL;
+                    target->call_args = NULL;
                     break;
                 }
 
                 expect(",");
-                prev->next = expr();
-                prev = prev->next;
+                target->call_args = expr();
+                target = target->call_args;
+                c++;
             }
 
             return node;

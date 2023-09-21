@@ -242,15 +242,15 @@ void gen(Node *node)
         printf("# FUNCCALL\n");
 
         // 引数をスタックに積む
-        Node *target = node;
+        Node *target = node->call_args;
 
         int args_count = 0;
-        while (target->next != NULL)
+        while (target != NULL)
         {
             // この実装だと、左から順に評価することになる
             // 右から順に実行してスタックに乗せた方が一時退避が不要なので望ましい
-            gen(target->next);
-            target = target->next;
+            gen(target);
+            target = target->call_args;
             args_count++;
         }
 
