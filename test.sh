@@ -69,5 +69,7 @@ assert 42 'int main(){ int a; int b; a=42; b=&a; return *b; }'
 assert 1 'int main(){ int a; int* b; int******** c; return 1; }'
 assert 3 'int main(){ int x; int *y; y = &x; *y = 3; return x; }'
 assert 4 'int main(){ int *p; alloc4(&p, 1, 2, 4, 8); int *q; q = p + 2; return *q; }'
+assert 4 'int main(){ int x; return sizeof(x); }'
+assert 8 'int main(){ int *y; return sizeof(y); }'
 
 echo OK

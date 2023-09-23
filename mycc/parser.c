@@ -695,11 +695,33 @@ Node *mul()
 Node *unary()
 {
     // unary =
+    //   "sizeof" unary |
     //   "+"? unary |
     //   "-"? unary |
     //   "*" unary |
     //   "&" unary |
     //   primary
+    if (consume_control(TK_SIZEOF))
+    {
+        Node *rhs = unary();
+        int type_size = 0;
+        if (is_address(rhs))
+        {
+            // PTR
+            type_size = 8;
+        }
+        else
+        {
+            // INT
+            type_size = 4;
+        }
+
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_NUM;
+        node->val = type_size;
+        return node;
+    }
+
     if (consume_reserved("*"))
     {
         Node *node = calloc(1, sizeof(Node));
