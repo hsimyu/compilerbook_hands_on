@@ -133,6 +133,13 @@ void tokenize(char *p)
             continue;
         }
 
+        if (strncmp(p, "sizeof", 6) == 0 && !is_alphabet_or_number(p[6]))
+        {
+            cur = new_token(TK_SIZEOF, cur, p, 6);
+            p = p + 6;
+            continue;
+        }
+
         if ('a' <= *p && *p <= 'z')
         {
             int token_length = count_identifier_length(p);

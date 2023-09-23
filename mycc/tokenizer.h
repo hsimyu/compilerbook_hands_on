@@ -10,6 +10,7 @@ typedef enum
     TK_ELSE,     // else
     TK_FOR,      // for
     TK_WHILE,    // for
+    TK_SIZEOF,   // sizeof
     TK_EOF,      // 入力の終わり
 } TokenKind;
 
