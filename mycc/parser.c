@@ -621,6 +621,11 @@ bool is_address(Node *node)
         return false;
     }
 
+    if (node->kind == ND_ADDPTR || node->kind == ND_SUBPTR)
+    {
+        return true;
+    }
+
     if (node->kind == ND_ADDR)
     {
         return true;
@@ -636,7 +641,6 @@ bool is_address(Node *node)
         return is_address(node->lhs);
     }
 
-    // TODO: (&a + 1) のような形式に対応
     return false;
 }
 
