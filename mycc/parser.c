@@ -172,7 +172,7 @@ Type *find_type_impl(TypeKind kind, int ptr_depth)
     return NULL;
 }
 
-Type *new_type_impl(TypeKind kind, int ptr_depth)
+Type *define_new_type_info(TypeKind kind, int ptr_depth)
 {
     for (int i = 0; i < 100; i++)
     {
@@ -190,21 +190,40 @@ Type *new_type_impl(TypeKind kind, int ptr_depth)
 
 // 型名を名前引きする
 // 見つからなかったら NULL を返します。
-Type *search_type(char *tname, int ptr_depth)
+Type *search_type(char *tname, int ptr_depth, int array_size)
 {
+    if (array_size > 0)
+    {
+        Type *tdef = find_type_impl(TYPE_ARRAY, ptr_depth);
+        if (tdef != NULL)
+        {
+            // 定義済み
+            return tdef;
+        }
+
+        // 定義されていないので生成する
+        // 配列型の時、同じポインタ深度の要素型の型情報を探し、それを指す Array 型情報を生成する
+        // TODO: ポインタ深度を +1 すべきなのかどうか
+        Type *ptr_to = search_type(tname, ptr_depth, 0);
+        Type *newdef = define_new_type_info(TYPE_ARRAY, ptr_depth);
+        newdef->ptr_to = ptr_to;
+        newdef->array_size = array_size;
+        return newdef;
+    }
+
     if (ptr_depth > 0)
     {
         Type *tdef = find_type_impl(TYPE_PTR, ptr_depth);
         if (tdef != NULL)
         {
-            // 定義済みなので返す
+            // 定義済み
             return tdef;
         }
 
         // 定義されていないので生成する
         // 深度を一つ減らして検索または生成する
-        Type *ptr_to = search_type(tname, ptr_depth - 1);
-        Type *newdef = new_type_impl(TYPE_PTR, ptr_depth);
+        Type *ptr_to = search_type(tname, ptr_depth - 1, 0);
+        Type *newdef = define_new_type_info(TYPE_PTR, ptr_depth);
         newdef->ptr_to = ptr_to;
         return newdef;
     }
@@ -225,7 +244,7 @@ Type *search_type(char *tname, int ptr_depth)
         else
         {
             // 型定義されている数を超えたので、定義して返す
-            Type *newdef = new_type_impl(TYPE_INT, 0);
+            Type *newdef = define_new_type_info(TYPE_INT, 0);
             return newdef;
         }
     }
@@ -263,7 +282,7 @@ Node *new_node_ident_ref(Token *ident)
     return node;
 }
 
-Node *new_node_ident_declare(Token *ident, int ptr_depth)
+Node *new_node_ident_declare(Token *ident, int ptr_depth, int array_size)
 {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR_DEC;
@@ -281,7 +300,7 @@ Node *new_node_ident_declare(Token *ident, int ptr_depth)
     lvar->name = ident->str;
     lvar->len = ident->len;
 
-    lvar->ty = search_type("int", ptr_depth);
+    lvar->ty = search_type("int", ptr_depth, array_size);
     if (lvar->ty == NULL)
     {
         error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
@@ -375,7 +394,7 @@ Node *funcdef()
         // NOTE: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
         // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
         tok = expect_ident();
-        Node *arg = new_node_ident_declare(tok, 0);
+        Node *arg = new_node_ident_declare(tok, 0, 0);
         f->next = arg;
         f->arg_count++;
 
@@ -386,7 +405,7 @@ Node *funcdef()
             expect_type_ident("int");
 
             tok = expect_ident();
-            arg->next = new_node_ident_declare(tok, 0);
+            arg->next = new_node_ident_declare(tok, 0, 0);
             arg = arg->next;
             f->arg_count++;
         }
@@ -406,7 +425,7 @@ Node *funcdef()
 Node *stmt()
 {
     // stmt =
-    //   "int" "*"* ident ";" |
+    //   "int" "*"* ident ("[" num "]")? ";" |
     //   "{" stmt* "}" |
     //   "if" "(" expr ")" stmt ("else" stmt)? |
     //   "while" "(" expr ")" stmt
@@ -425,7 +444,20 @@ Node *stmt()
         }
 
         Token *ident = expect_ident();
-        Node *node = new_node_ident_declare(ident, ptr_depth);
+
+        if (consume_reserved("["))
+        {
+            int array_size = expect_number();
+            // TODO: array_size が正の整数でなければ怒る
+
+            // 配列定義
+            expect("]");
+            Node *node = new_node_ident_declare(ident, ptr_depth, array_size);
+            expect(";");
+            return node;
+        }
+
+        Node *node = new_node_ident_declare(ident, ptr_depth, 0);
         expect(";");
         return node;
     }

@@ -27,7 +27,6 @@ int arg3(int a, int b, int c)
 
 int alloc4(int **outAddress, int a, int b, int c, int d)
 {
-    printf("alloc4\n");
     int *ptr = calloc(4, sizeof(int));
     ptr[0] = a;
     ptr[1] = b;

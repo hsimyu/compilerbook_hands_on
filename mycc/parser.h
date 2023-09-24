@@ -35,15 +35,17 @@ typedef enum
 {
     TYPE_INT,
     TYPE_PTR,
+    TYPE_ARRAY,
     TYPE_INVALID,
 } TypeKind;
 
 typedef struct Type Type;
 struct Type
 {
-    TypeKind kind; // 型の種類
-    Type *ptr_to;  // ポインタ型の指し先の型
-    int ptr_depth; // ポインタの深度 (* なら 1, ** なら 2)
+    TypeKind kind;     // 型の種類
+    Type *ptr_to;      // PTR: ポインタ型の指し先の型
+    int ptr_depth;     // PTR: ポインタの深度 (* なら 1, ** なら 2), ptr_to をたどっていくようにすれば定義不要
+    size_t array_size; // ARRAY: 固定長配列サイズ
 };
 
 typedef struct LVar LVar;
