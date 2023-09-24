@@ -4,6 +4,8 @@ cc_binary(
         "main.c",
         "parser.c",
         "parser.h",
+        "type.c",
+        "type.h",
         "tokenizer.c",
         "tokenizer.h",
         "util.c",
