@@ -188,6 +188,23 @@ Type *define_new_type_info(TypeKind kind, int ptr_depth)
     return NULL;
 }
 
+int calc_type_size_impl(Type *ty)
+{
+    if (ty->kind == TYPE_ARRAY)
+    {
+        int elem_size = calc_type_size_impl(ty->ptr_to);
+        return elem_size * ty->array_size;
+    }
+
+    if (ty->kind == TYPE_PTR)
+    {
+        return 8;
+    }
+
+    // INT
+    return 8;
+}
+
 // 型名を名前引きする
 // 見つからなかったら NULL を返します。
 Type *search_type(char *tname, int ptr_depth, int array_size)
@@ -208,6 +225,7 @@ Type *search_type(char *tname, int ptr_depth, int array_size)
         Type *newdef = define_new_type_info(TYPE_ARRAY, ptr_depth);
         newdef->ptr_to = ptr_to;
         newdef->array_size = array_size;
+        newdef->type_size = calc_type_size_impl(newdef);
         return newdef;
     }
 
@@ -225,6 +243,7 @@ Type *search_type(char *tname, int ptr_depth, int array_size)
         Type *ptr_to = search_type(tname, ptr_depth - 1, 0);
         Type *newdef = define_new_type_info(TYPE_PTR, ptr_depth);
         newdef->ptr_to = ptr_to;
+        newdef->type_size = calc_type_size_impl(newdef);
         return newdef;
     }
     else
@@ -245,6 +264,7 @@ Type *search_type(char *tname, int ptr_depth, int array_size)
         {
             // 型定義されている数を超えたので、定義して返す
             Type *newdef = define_new_type_info(TYPE_INT, 0);
+            newdef->type_size = calc_type_size_impl(newdef);
             return newdef;
         }
     }
@@ -306,18 +326,18 @@ Node *new_node_ident_declare(Token *ident, int ptr_depth, int array_size)
         error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
     }
 
-    int address_size = 8;
+    int lvar_size = lvar->ty->type_size;
     if (active_func->locals == NULL)
     {
-        lvar->offset = address_size; // 最初の値
+        lvar->offset = lvar_size; // 最初の値
     }
     else
     {
-        lvar->offset = active_func->locals->offset + address_size; // オフセットは増やしていく
+        lvar->offset = active_func->locals->offset + lvar_size; // オフセットは増やしていく
     }
     node->var_info = lvar;
     active_func->locals = lvar;
-    active_func->locals_size += address_size;
+    active_func->locals_size += lvar_size;
 
     return node;
 }

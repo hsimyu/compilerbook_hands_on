@@ -55,9 +55,11 @@ void gen(Node *node)
         printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
 
         // プロローグ
-        printf("  push rbp\n");                       // 関数呼び出し時の rbp をスタックに保存
-        printf("  mov rbp, rsp\n");                   // rbp に現在のスタックトップのアドレスを保存
-        printf("  sub rsp, %d\n", node->locals_size); // 必要なローカル変数の分だけスタックを確保 (仮引数分もローカル変数に含まれている)
+        printf("  push rbp\n");     // 関数呼び出し時の rbp をスタックに保存
+        printf("  mov rbp, rsp\n"); // rbp に現在のスタックトップのアドレスを保存
+        // 必要なローカル変数の分だけスタックを確保 (仮引数分もローカル変数に含まれている)
+        printf("# LOCAL SIZE = %d\n", node->locals_size);
+        printf("  sub rsp, %d\n", node->locals_size);
 
         // レジスタからスタックへ仮引数を割り当てる
         // 1: rdi
@@ -291,6 +293,7 @@ void gen(Node *node)
         printf("  mov rax, rsp\n");
         printf("  and rax, 15\n"); // rax = rax & 0b00001111, ビットマスク
         printf("  cmp rax, 0\n");  // ビットマスク結果が 0 なら rsp は 16 の倍数、そうでなければ 8 の倍数
+        // TODO: 4 の倍数の場合がある
         printf("  je .Lcallb%d\n", label_index);
 
         // rsp が 16 の倍数でない場合は呼び出し前後で rsp を調整する
