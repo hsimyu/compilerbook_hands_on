@@ -5,13 +5,61 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "util.h"
 #include "tokenizer.h"
+#include "parser.h"
 #include "type.h"
 
 extern Token *token;
 
 // 組み込み型のリスト
 Type type_list[100];
+
+// アドレスを返す性質があるノードかどうかを判定します。
+bool is_address(Node *node)
+{
+    if (node == NULL)
+    {
+        return false;
+    }
+
+    if (node->kind == ND_ADDPTR || node->kind == ND_SUBPTR)
+    {
+        return true;
+    }
+
+    if (node->kind == ND_ADDR)
+    {
+        return true;
+    }
+
+    if (node->kind == ND_LVAR_REF && node->var_info->ty->kind == TYPE_PTR)
+    {
+        return true;
+    }
+
+    if (node->kind == ND_LVAR_REF && node->var_info->ty->kind == TYPE_ARRAY)
+    {
+        return true;
+    }
+
+    if (node->kind == ND_DEREF)
+    {
+        return is_address(node->lhs);
+    }
+
+    return false;
+}
+
+bool is_array(Node *node)
+{
+    if (node == NULL)
+    {
+        return false;
+    }
+
+    return (node->kind == ND_LVAR_REF && node->var_info->ty->kind == TYPE_ARRAY);
+}
 
 Type *find_type_impl(TypeKind kind, int ptr_depth)
 {

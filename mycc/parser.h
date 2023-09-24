@@ -33,8 +33,6 @@ typedef enum
     ND_FUNCDEF,  // def f()
 } NodeKind;
 
-struct Type;
-
 typedef struct LVar LVar;
 struct LVar
 {

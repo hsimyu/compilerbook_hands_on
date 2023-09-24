@@ -208,18 +208,18 @@ Node *new_node_ident_declare(Token *ident, int ptr_depth, int array_size)
         error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
     }
 
-    int lvar_size = lvar->ty->type_size;
     if (active_func->locals == NULL)
     {
-        lvar->offset = lvar_size; // 最初の値
+        lvar->offset = 8; // 最初の変数は rbp - 8 の位置になる
     }
     else
     {
-        lvar->offset = active_func->locals->offset + lvar_size; // オフセットは増やしていく
+        // オフセットは、一つ前の変数のオフセット + サイズ
+        lvar->offset = active_func->locals->offset + active_func->locals->ty->type_size;
     }
     node->var_info = lvar;
     active_func->locals = lvar;
-    active_func->locals_size += lvar_size;
+    active_func->locals_size += lvar->ty->type_size;
 
     return node;
 }
@@ -547,37 +547,6 @@ Node *relational()
     }
 }
 
-// アドレスを返す性質があるノードかどうかを判定します。
-bool is_address(Node *node)
-{
-    if (node == NULL)
-    {
-        return false;
-    }
-
-    if (node->kind == ND_ADDPTR || node->kind == ND_SUBPTR)
-    {
-        return true;
-    }
-
-    if (node->kind == ND_ADDR)
-    {
-        return true;
-    }
-
-    if (node->kind == ND_LVAR_REF && node->var_info->ty->kind == TYPE_PTR)
-    {
-        return true;
-    }
-
-    if (node->kind == ND_DEREF)
-    {
-        return is_address(node->lhs);
-    }
-
-    return false;
-}
-
 Node *add()
 {
     // add = mul ("+" mul | "-" mul)*
@@ -645,8 +614,16 @@ Node *unary()
         int type_size = 0;
         if (is_address(rhs))
         {
-            // PTR
-            type_size = 8;
+            if (is_array(rhs))
+            {
+                // array
+                type_size = rhs->var_info->ty->type_size;
+            }
+            else
+            {
+                // PTR
+                type_size = 8;
+            }
         }
         else
         {

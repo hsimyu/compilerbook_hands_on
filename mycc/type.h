@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stddef.h>
+#include <stdbool.h>
+
 typedef enum
 {
     TYPE_INT,
@@ -17,6 +20,10 @@ struct Type
     int ptr_depth;     // PTR: ポインタの深度 (* なら 1, ** なら 2), ptr_to をたどっていくようにすれば定義不要
     size_t array_size; // ARRAY: 固定長配列サイズ
 };
+
+struct Node;
+bool is_address(struct Node *node);
+bool is_array(struct Node *node);
 
 void init_type();
 Type *search_type(char *tname, int ptr_depth, int array_size);

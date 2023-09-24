@@ -73,6 +73,8 @@ assert 4 'int main(){ int x; return sizeof(x); }'
 assert 8 'int main(){ int *y; return sizeof(y); }'
 assert 4 'int main(){ int x; return sizeof(x + 3); }'
 assert 8 'int main(){ int *y; return sizeof(y + 3); }'
-assert 4 'int main(){ int x[10]; return sizeof(x); }'
+assert 80 'int main(){ int x[10]; return sizeof(x); }'
+assert 10 'int main(){ int a[2]; *a = 10; return *a; }'
+assert 10 'int main(){ int a[2]; *(a + 1) = 10; return *(a + 1); }'
 
 echo OK
