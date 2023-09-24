@@ -68,6 +68,7 @@ assert 6 'int foo(int a, int b, int c) {return a + b + c;} int main(){ return fo
 assert 42 'int main(){ int a; int b; a=42; b=&a; return *b; }'
 assert 1 'int main(){ int a; int* b; int******** c; return 1; }'
 assert 3 'int main(){ int x; int *y; y = &x; *y = 3; return x; }'
+assert 6 'int main(){ int x; int *y; y = &x; int *z; z = &x; x = 3; return *y + *z; }'
 assert 4 'int main(){ int *p; alloc4(&p, 1, 2, 4, 8); int *q; q = p + 2; return *q; }'
 assert 4 'int main(){ int x; return sizeof(x); }'
 assert 8 'int main(){ int *y; return sizeof(y); }'
@@ -76,5 +77,7 @@ assert 8 'int main(){ int *y; return sizeof(y + 3); }'
 assert 80 'int main(){ int x[10]; return sizeof(x); }'
 assert 10 'int main(){ int a[2]; *a = 10; return *a; }'
 assert 10 'int main(){ int a[2]; *(a + 1) = 10; return *(a + 1); }'
+assert 3 'int main(){ int a[2]; *a = 1; *(a + 1) = 2; return *a + *(a + 1); }'
+assert 3 'int main(){ int a[2]; *a = 1; *(a + 1) = 2; int *p; p = a; return *p + *(p + 1); }'
 
 echo OK

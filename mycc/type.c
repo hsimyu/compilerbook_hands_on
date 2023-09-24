@@ -45,7 +45,8 @@ bool is_address(Node *node)
 
     if (node->kind == ND_DEREF)
     {
-        return is_address(node->lhs);
+        // TODO: lhs の ptr_to が PTR かどうかを調べるようにする
+        return false;
     }
 
     return false;
