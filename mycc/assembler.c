@@ -4,7 +4,9 @@
 #include "parser.h"
 #include "type.h"
 
+void gen_lval(Node *node);
 void gen_rval(Node *node);
+void gen(Node *node);
 
 // 左辺値の評価: 変数参照が指しているアドレスを評価
 void gen_lval(Node *node)
@@ -18,7 +20,7 @@ void gen_lval(Node *node)
         // 左辺値としての変数参照にデリファレンスが指定されているので、
         // lhs に格納されている値を右辺値として評価して返す
         // lhs にはアドレス値が入っているので、その評価値はアドレスになる
-        gen_rval(node->lhs);
+        gen(node->lhs);
         printf("# DEREF END\n");
     }
     else
@@ -33,16 +35,22 @@ void gen_lval(Node *node)
 // 右辺値の評価: 変数参照が指しているアドレスに格納されている値を評価
 void gen_rval(Node *node)
 {
-    gen_lval(node); // node が示す変数のアドレスをスタックに積む命令を生成
-
     if (is_array(node))
     {
-        // 配列ノードを右辺値評価した場合、何もしなくてよい
+        // 配列ノードを右辺値評価した場合、変数のアドレスをスタックに積むのみでよい
         // なぜなら *a = 1 のような文の時、書き込み先は a + 0 であり、a のアドレスが指している箇所に書き込めばよいから
         // a の位置にはアドレス値は入っていないため [rax] のように評価してしまうと不正になる
+        gen_lval(node);
+    }
+    else if (node->kind == ND_ADDPTR || node->kind == ND_SUBPTR)
+    {
+        // ここに到達するのは、右辺値としてのデリファレンス時
+        // ノードの計算結果がアドレスとして積まれる
+        gen(node);
     }
     else
     {
+        gen_lval(node);               // node が示す変数のアドレスをスタックに積む命令を生成
         printf("  pop rax\n");        // 変数アドレスを取り出す
         printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
         printf("  push rax\n");       // 取り出した値をスタックに push する
