@@ -137,7 +137,7 @@ bool at_eof()
     return token->kind == TK_EOF;
 }
 
-Node *new_node(NodeKind kind, Node *lhs, Node *rhs)
+Node *new_node_binary(NodeKind kind, Node *lhs, Node *rhs)
 {
     Node *node = calloc(1, sizeof(Node));
     node->kind = kind;
@@ -506,7 +506,7 @@ Node *assign()
 
     if (consume_reserved("="))
     {
-        return new_node(ND_ASSIGN, node, assign());
+        return new_node_binary(ND_ASSIGN, node, assign());
     }
 
     return node;
@@ -520,9 +520,9 @@ Node *equality()
     for (;;)
     {
         if (consume_reserved("=="))
-            node = new_node(ND_EQ, node, relational());
+            node = new_node_binary(ND_EQ, node, relational());
         else if (consume_reserved("!="))
-            node = new_node(ND_NE, node, relational());
+            node = new_node_binary(ND_NE, node, relational());
         else
             return node;
     }
@@ -536,13 +536,13 @@ Node *relational()
     for (;;)
     {
         if (consume_reserved("<="))
-            node = new_node(ND_LE, node, add());
+            node = new_node_binary(ND_LE, node, add());
         else if (consume_reserved("<"))
-            node = new_node(ND_LT, node, add());
+            node = new_node_binary(ND_LT, node, add());
         else if (consume_reserved(">="))
-            node = new_node(ND_GE, node, add());
+            node = new_node_binary(ND_GE, node, add());
         else if (consume_reserved(">"))
-            node = new_node(ND_GT, node, add());
+            node = new_node_binary(ND_GT, node, add());
         else
             return node;
     }
@@ -559,22 +559,22 @@ Node *add()
         {
             if (is_address(node))
             {
-                node = new_node(ND_ADDPTR, node, mul());
+                node = new_node_binary(ND_ADDPTR, node, mul());
             }
             else
             {
-                node = new_node(ND_ADD, node, mul());
+                node = new_node_binary(ND_ADD, node, mul());
             }
         }
         else if (consume_reserved("-"))
         {
             if (is_address(node))
             {
-                node = new_node(ND_SUBPTR, node, mul());
+                node = new_node_binary(ND_SUBPTR, node, mul());
             }
             else
             {
-                node = new_node(ND_SUB, node, mul());
+                node = new_node_binary(ND_SUB, node, mul());
             }
         }
         else
@@ -592,9 +592,9 @@ Node *mul()
     for (;;)
     {
         if (consume_reserved("*"))
-            node = new_node(ND_MUL, node, unary());
+            node = new_node_binary(ND_MUL, node, unary());
         else if (consume_reserved("/"))
-            node = new_node(ND_DIV, node, unary());
+            node = new_node_binary(ND_DIV, node, unary());
         else
             return node;
     }
@@ -662,7 +662,7 @@ Node *unary()
     if (consume_reserved("-"))
     {
         // 0 - unary の AST とする
-        return new_node(ND_SUB, new_node_num(0), unary());
+        return new_node_binary(ND_SUB, new_node_num(0), unary());
     }
 
     return array_index();
