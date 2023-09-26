@@ -185,23 +185,32 @@ LVar *find_lvar(Token *tok)
     return NULL;
 }
 
-Node *new_node_ident_ref(Token *ident)
+Node *new_node_var_ref(Token *ident)
 {
     Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_LVAR_REF;
-
     LVar *lvar = find_lvar(ident);
     if (lvar == NULL)
     {
-        error_at(token->str - 1, "Undefined local variable is used: '%.*s'", ident->len, ident->str);
-    }
+        // ローカル変数が見つからなければ、グローバル変数を探す
+        GVar *gvar = find_gvar(ident);
 
-    // 存在済みの識別子
-    node->lvar_info = lvar;
+        if (gvar == NULL)
+            error_at(token->str - 1, "Undefined variable is used: '%.*s'", ident->len, ident->str);
+
+        // グローバル変数だった
+        node->kind = ND_GVAR_REF;
+        node->gvar_info = gvar;
+    }
+    else
+    {
+        // ローカル変数だった
+        node->kind = ND_LVAR_REF;
+        node->lvar_info = lvar;
+    }
     return node;
 }
 
-Node *new_node_ident_declare(Token *ident, int ptr_depth, int array_size)
+Node *new_node_lvar_declare(Token *ident, int ptr_depth, int array_size)
 {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR_DEC;
@@ -377,7 +386,7 @@ Node *symboldef()
         // NOTE: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
         // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
         tok = expect_ident();
-        Node *arg = new_node_ident_declare(tok, 0, 0);
+        Node *arg = new_node_lvar_declare(tok, 0, 0);
         f->next = arg;
         f->arg_count++;
 
@@ -388,7 +397,7 @@ Node *symboldef()
             expect_type_ident("int");
 
             tok = expect_ident();
-            arg->next = new_node_ident_declare(tok, 0, 0);
+            arg->next = new_node_lvar_declare(tok, 0, 0);
             arg = arg->next;
             f->arg_count++;
         }
@@ -435,12 +444,12 @@ Node *stmt()
 
             // 配列定義
             expect("]");
-            Node *node = new_node_ident_declare(ident, ptr_depth, array_size);
+            Node *node = new_node_lvar_declare(ident, ptr_depth, array_size);
             expect(";");
             return node;
         }
 
-        Node *node = new_node_ident_declare(ident, ptr_depth, 0);
+        Node *node = new_node_lvar_declare(ident, ptr_depth, 0);
         expect(";");
         return node;
     }
@@ -827,7 +836,7 @@ Node *primary()
         }
 
         // 関数呼び出しでない
-        return new_node_ident_ref(tok);
+        return new_node_var_ref(tok);
     }
 
     return new_node_num(expect_number());

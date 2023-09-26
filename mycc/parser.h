@@ -21,8 +21,8 @@ typedef enum
     ND_DEREF,    // 単項*
     ND_ADDR,     // 単項&
     ND_NUM,      // 整数
-    ND_LVAR_REF, // ローカル変数
-    ND_LVAR_DEC, // ローカル変数
+    ND_LVAR_REF, // ローカル変数参照
+    ND_LVAR_DEC, // ローカル変数定義
     ND_RETURN,   // return
     ND_IF,       // if
     ND_IFELSE,   // if ... else
@@ -32,6 +32,7 @@ typedef enum
     ND_FUNCCALL, // call f()
     ND_FUNCDEF,  // def f()
     ND_GVAR_DEF, // グローバル変数定義
+    ND_GVAR_REF, // グローバル変数参照
 } NodeKind;
 
 typedef struct LVar LVar;
