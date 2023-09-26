@@ -254,6 +254,7 @@ Node *relational();
 Node *add();
 Node *mul();
 Node *unary();
+Node *array_index();
 Node *primary();
 
 Node *code[100]; // stmt の配列
@@ -660,11 +661,38 @@ Node *unary()
 
     if (consume_reserved("-"))
     {
-        // 0 - primary の AST とする
+        // 0 - unary の AST とする
         return new_node(ND_SUB, new_node_num(0), unary());
     }
 
-    return primary();
+    return array_index();
+}
+
+Node *array_index()
+{
+    // array_index = primary ( "[" primary "]" )?
+    Node *p1 = primary();
+
+    if (consume_reserved("["))
+    {
+        // p1[p2] は *(p1 + p2) と読み替える
+        Node *p2 = primary();
+        expect("]");
+
+        Node *addptr = calloc(1, sizeof(Node));
+        addptr->kind = ND_ADDPTR;
+        addptr->lhs = p1;
+        addptr->rhs = p2;
+
+        Node *deref = calloc(1, sizeof(Node));
+        deref->kind = ND_DEREF;
+        deref->lhs = addptr;
+        return deref;
+    }
+    else
+    {
+        return p1;
+    }
 }
 
 Node *primary()
