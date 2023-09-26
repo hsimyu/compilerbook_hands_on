@@ -1,12 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int foo()
-{
-    printf("OK\n");
-    return 0;
-}
-
 int arg1(int a)
 {
     printf("a = %d\n", a);

@@ -24,7 +24,6 @@ int main(int argc, char **argv)
 
     // アセンブリのヘッダー
     printf(".intel_syntax noprefix\n");
-    printf(".globl main\n");
 
     int line = 0;
     while (nodes[line] != NULL)

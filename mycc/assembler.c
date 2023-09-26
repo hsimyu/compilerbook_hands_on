@@ -11,8 +11,8 @@ void gen(Node *node);
 // 左辺値の評価: 変数参照が指しているアドレスを評価
 void gen_lval(Node *node)
 {
-    if (node->kind != ND_LVAR_REF && node->kind != ND_DEREF)
-        error("Failed to generate assembly: left-hand side of assign node is not Identifier or Dereference: %c", node->kind);
+    if (node->kind != ND_LVAR_REF && node->kind != ND_GVAR_REF && node->kind != ND_DEREF)
+        error("Failed to generate assembly: left-hand side of assign node is not Variable Reference or Dereference: %c", node->kind);
 
     if (node->kind == ND_DEREF)
     {
@@ -23,9 +23,16 @@ void gen_lval(Node *node)
         gen(node->lhs);
         printf("# DEREF END\n");
     }
+    else if (node->kind == ND_GVAR_REF)
+    {
+        // 左辺値としてのグローバル変数参照なので、アドレス値をスタックに積んで返す
+        // TOOD: lea 命令についてちゃんと調べる
+        printf("  lea rax, %.*s[rip]\n", node->gvar_info->len, node->gvar_info->name);
+        printf("  push rax\n");
+    }
     else
     {
-        // 左辺値としての変数参照なので、アドレスを積んで返す
+        // 左辺値としてのローカル変数参照なので、アドレスを積んで返す
         printf("  mov rax, rbp\n");                         // rax に関数トップの値を入れて、
         printf("  sub rax, %d\n", node->lvar_info->offset); // 変数名に対応するオフセット値だけ rax を下げる
         printf("  push rax\n");                             // rax の値 (= 変数のアドレス) をスタックに push する
@@ -71,6 +78,9 @@ void gen(Node *node)
     {
     case ND_FUNCDEF:
         printf("# FUNCDEF\n");
+        // TODO: .globl について調べる
+        printf(".text\n");
+        printf(".globl %.*s\n", node->fname_len, node->fname);
         printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
 
         // プロローグ
@@ -131,6 +141,7 @@ void gen(Node *node)
         printf("  pop rbp\n");      // 前の rbp を復元
         printf("  ret\n");          // リターンアドレスへ戻る
         printf("# FUNCDEF END\n");
+        printf("\n");
         return;
     case ND_NUM:
         printf("# NUM\n");
@@ -157,6 +168,20 @@ void gen(Node *node)
         printf("# LVAR BEGIN\n");
         gen_rval(node);
         printf("# LVAR END\n");
+        return;
+    case ND_GVAR_DEF: // グローバル変数の定義
+        printf("# GVAR DEF\n");
+        printf(".data\n");
+        printf(".globl %.*s\n", node->gvar_info->len, node->gvar_info->name);
+        printf("%.*s:\n", node->gvar_info->len, node->gvar_info->name);
+        printf("  .zero %u\n", node->gvar_info->ty->type_size);
+        printf("\n");
+        return;
+    case ND_GVAR_REF: // グローバル変数の参照
+        // グローバル変数のアドレスに格納されている値を push する
+        printf("# GVAR REF: %.*s\n", node->gvar_info->len, node->gvar_info->name);
+        // TODO: なんで [rip] って書かなくちゃいけないのかよく分かってない
+        printf("  push %.*s[rip]\n", node->gvar_info->len, node->gvar_info->name);
         return;
     case ND_ASSIGN:
         printf("# ASSIGN BEGIN\n");
