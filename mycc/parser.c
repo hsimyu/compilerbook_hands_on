@@ -15,6 +15,9 @@ extern Token *token;
 // 現在定義中の関数ノード
 Node *active_func;
 
+// グローバル変数のリスト
+GVar *globals;
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
 // それ以外の場合には false を返す
 bool consume_reserved(char *op)
@@ -154,7 +157,21 @@ Node *new_node_num(int val)
     return node;
 }
 
-// 変数を名前引きする
+// グローバル変数を名前引きする
+// 見つからなかったら NULL を返します。
+GVar *find_gvar(Token *tok)
+{
+    for (GVar *var = globals; var != NULL; var = var->next)
+    {
+        if (var->len == tok->len && memcmp(tok->str, var->name, var->len) == 0)
+        {
+            return var;
+        }
+    }
+    return NULL;
+}
+
+// 現在アクティブな関数スコープからローカル変数を名前引きする
 // 見つからなかったら NULL を返します。
 LVar *find_lvar(Token *tok)
 {
@@ -180,7 +197,7 @@ Node *new_node_ident_ref(Token *ident)
     }
 
     // 存在済みの識別子
-    node->var_info = lvar;
+    node->lvar_info = lvar;
     return node;
 }
 
@@ -217,7 +234,7 @@ Node *new_node_ident_declare(Token *ident, int ptr_depth, int array_size)
         // オフセットは、一つ前の変数のオフセット + サイズ
         lvar->offset = active_func->locals->offset + active_func->locals->ty->type_size;
     }
-    node->var_info = lvar;
+    node->lvar_info = lvar;
     active_func->locals = lvar;
     active_func->locals_size += lvar->ty->type_size;
 
@@ -243,8 +260,48 @@ Node *new_node_funcdef(Token *ident)
     return node;
 }
 
+Node *new_node_gvar(Token *ident, int ptr_depth, int array_size)
+{
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_GVAR_DEF;
+
+    GVar *gvar = find_gvar(ident);
+    if (gvar != NULL)
+    {
+        // 存在済みの識別子ならエラー
+        error_at(token->str - 1, "Duplicate global variable declaration: '%.*s'", ident->len, ident->str);
+    }
+
+    // 新しい識別子を割り当てる
+    gvar = calloc(1, sizeof(LVar));
+    gvar->next = globals; // 新しいものを先頭にする
+    gvar->name = ident->str;
+    gvar->len = ident->len;
+
+    gvar->ty = search_type("int", ptr_depth, array_size);
+    if (gvar->ty == NULL)
+    {
+        error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
+    }
+
+    // if (active_func->locals == NULL)
+    // {
+    //     lvar->offset = 8; // 最初の変数は rbp - 8 の位置になる
+    // }
+    // else
+    // {
+    //     // オフセットは、一つ前の変数のオフセット + サイズ
+    //     lvar->offset = active_func->locals->offset + active_func->locals->ty->type_size;
+    // }
+
+    node->gvar_info = gvar;
+    globals = gvar;
+
+    return node;
+}
+
 void program();
-Node *funcdef();
+Node *symboldef();
 Node *stmt();
 Node *block();
 Node *assign();
@@ -261,24 +318,47 @@ Node *code[100]; // stmt の配列
 
 void program()
 {
-    // プログラム == 関数定義の列ということにする
-    // program = funcdef*
+    // プログラム == シンボル定義の列ということにする
+    // program = symboldef*
     int i = 0;
     while (!at_eof())
     {
-        code[i++] = funcdef();
+        code[i++] = symboldef();
     }
     code[i] = NULL;
 }
 
-Node *funcdef()
+Node *symboldef()
 {
-    // funcdef = "int" ident "(" ("int" ident)? ("," "int" ident)? ")" block
+    // symboldef =
+    // "int" ident ("[" num "]")? ";" | グローバル変数定義
+    // "int" ident "(" ("int" ident)? ("," "int" ident)? ")" block | 関数定義
 
     // 返り値の型: 今は読み捨てる
+    // TODO: ここで* を許さないと int* なグローバル変数を定義できない
     expect_type_ident("int");
 
     Token *tok = expect_ident();
+
+    if (consume_reserved("["))
+    {
+        // グローバルな配列変数定義
+        int array_size = expect_number();
+        Node *node = new_node_gvar(tok, 0, array_size);
+        expect("]");
+        expect(";");
+        return node;
+    }
+
+    if (peek_reserved(";"))
+    {
+        // グローバルな変数定義である
+        Node *node = new_node_gvar(tok, 0, 0);
+        expect(";");
+        return node;
+    }
+
+    // 関数定義である
     Node *f = new_node_funcdef(tok);
 
     // active_func を切り替える
@@ -618,7 +698,7 @@ Node *unary()
             if (is_array(rhs))
             {
                 // array
-                type_size = rhs->var_info->ty->type_size;
+                type_size = rhs->lvar_info->ty->type_size;
             }
             else
             {

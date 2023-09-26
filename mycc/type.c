@@ -33,12 +33,12 @@ bool is_address(Node *node)
         return true;
     }
 
-    if (node->kind == ND_LVAR_REF && node->var_info->ty->kind == TYPE_PTR)
+    if (node->kind == ND_LVAR_REF && node->lvar_info->ty->kind == TYPE_PTR)
     {
         return true;
     }
 
-    if (node->kind == ND_LVAR_REF && node->var_info->ty->kind == TYPE_ARRAY)
+    if (node->kind == ND_LVAR_REF && node->lvar_info->ty->kind == TYPE_ARRAY)
     {
         return true;
     }
@@ -59,7 +59,7 @@ bool is_array(Node *node)
         return false;
     }
 
-    return (node->kind == ND_LVAR_REF && node->var_info->ty->kind == TYPE_ARRAY);
+    return (node->kind == ND_LVAR_REF && node->lvar_info->ty->kind == TYPE_ARRAY);
 }
 
 Type *find_type_impl(TypeKind kind, int ptr_depth)

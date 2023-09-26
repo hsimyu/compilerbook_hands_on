@@ -26,9 +26,9 @@ void gen_lval(Node *node)
     else
     {
         // 左辺値としての変数参照なので、アドレスを積んで返す
-        printf("  mov rax, rbp\n");                        // rax に関数トップの値を入れて、
-        printf("  sub rax, %d\n", node->var_info->offset); // 変数名に対応するオフセット値だけ rax を下げる
-        printf("  push rax\n");                            // rax の値 (= 変数のアドレス) をスタックに push する
+        printf("  mov rax, rbp\n");                         // rax に関数トップの値を入れて、
+        printf("  sub rax, %d\n", node->lvar_info->offset); // 変数名に対応するオフセット値だけ rax を下げる
+        printf("  push rax\n");                             // rax の値 (= 変数のアドレス) をスタックに push する
     }
 }
 

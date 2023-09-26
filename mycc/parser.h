@@ -31,6 +31,7 @@ typedef enum
     ND_BLOCK,    // { ... }
     ND_FUNCCALL, // call f()
     ND_FUNCDEF,  // def f()
+    ND_GVAR_DEF, // グローバル変数定義
 } NodeKind;
 
 typedef struct LVar LVar;
@@ -38,9 +39,18 @@ struct LVar
 {
     LVar *next; // 次の変数または NULL
     char *name; // 変数の名前
+    int len;    // 名前の長さ
     Type *ty;   // 変数の型
-    int len;    // 長さ
     int offset; // RBP からのオフセット
+};
+
+typedef struct GVar GVar;
+struct GVar
+{
+    GVar *next; // 次の変数または NULL
+    char *name; // 変数の名前
+    int len;    // 名前の長さ
+    Type *ty;   // 変数の型
 };
 
 typedef struct Node Node;
@@ -52,7 +62,8 @@ struct Node
     Node *lhs;       // 左辺
     Node *rhs;       // 右辺
     int val;         // kind が ND_NUM の場合のみ
-    LVar *var_info;  // kind が ND_LVAR の場合のみ
+    LVar *lvar_info; // kind が ND_LVAR の場合のみ
+    GVar *gvar_info; // kind が ND_GVAR の場合のみ
     Node *opt_a;     // kind が ND_IFELSE, ND_FOR の場合のみ
     Node *opt_b;     // kind が ND_FOR の場合のみ
     Node *next;      // kind が ND_BLOCK の場合のみ
