@@ -220,11 +220,12 @@ Node *new_node_var_ref(Token *ident)
     return node;
 }
 
-Node *new_node_lvar_declare(Token *ident, int ptr_depth, int array_size)
+Node *new_node_lvar_declare(DeclToken *decl_token)
 {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR_DEC;
 
+    Token *ident = decl_token->identifier_token;
     LVar *lvar = find_lvar(ident);
     if (lvar != NULL)
     {
@@ -238,7 +239,7 @@ Node *new_node_lvar_declare(Token *ident, int ptr_depth, int array_size)
     lvar->name = ident->str;
     lvar->len = ident->len;
 
-    lvar->ty = search_type("int", ptr_depth, array_size);
+    lvar->ty = search_type("int", decl_token->ptr_depth, decl_token->array_size);
     if (lvar->ty == NULL)
     {
         error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
@@ -320,6 +321,7 @@ Node *new_node_gvar(Token *ident, int ptr_depth, int array_size)
 }
 
 void program();
+DeclToken *decl();
 Node *symboldef();
 Node *stmt();
 Node *block();
@@ -345,82 +347,6 @@ void program()
         code[i++] = symboldef();
     }
     code[i] = NULL;
-}
-
-Node *symboldef()
-{
-    // symboldef =
-    // "int" ident ("[" num "]")? ";" | グローバル変数定義
-    // "int" ident "(" ("int" ident)? ("," "int" ident)? ")" block | 関数定義
-
-    // 返り値の型: 今は読み捨てる
-    // TODO: ここで* を許さないと int* なグローバル変数を定義できない
-    expect_type_ident("int");
-
-    Token *tok = expect_ident();
-
-    if (consume_reserved("["))
-    {
-        // グローバルな配列変数定義
-        int array_size = expect_number();
-        Node *node = new_node_gvar(tok, 0, array_size);
-        expect("]");
-        expect(";");
-        return node;
-    }
-
-    if (peek_reserved(";"))
-    {
-        // グローバルな変数定義である
-        Node *node = new_node_gvar(tok, 0, 0);
-        expect(";");
-        return node;
-    }
-
-    // 関数定義である
-    Node *f = new_node_funcdef(tok);
-
-    // active_func を切り替える
-    Node *previous_func = active_func; // 復元用
-    active_func = f;
-    active_func->locals = NULL;
-    active_func->locals_size = 0;
-
-    expect("(");
-
-    // 関数の仮引数をパース
-    // 仮引数は int x, int y のような形式で定義される
-    tok = consume_type_ident("int");
-    if (tok != NULL)
-    {
-        // NOTE: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
-        // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
-        tok = expect_ident();
-        Node *arg = new_node_lvar_declare(tok, 0, 0);
-        f->next = arg;
-        f->arg_count++;
-
-        // 第 2 引数以降
-        while (consume_reserved(","))
-        {
-            // 型名は今は読み捨てる
-            expect_type_ident("int");
-
-            tok = expect_ident();
-            arg->next = new_node_lvar_declare(tok, 0, 0);
-            arg = arg->next;
-            f->arg_count++;
-        }
-
-        arg->next = NULL;
-    }
-
-    // NOTE: ここで expect するのは型名または ) なので、expect(")") だとエラーメッセージが不適切
-    expect(")");
-    f->lhs = block();
-
-    active_func = previous_func; // 元に戻す
-    return f;
 }
 
 DeclToken *decl()
@@ -458,6 +384,68 @@ DeclToken *decl()
     return NULL;
 }
 
+Node *symboldef()
+{
+    // symboldef =
+    // decl ";" | グローバル変数定義
+    // decl "(" (decl)? ("," decl)? ")" block | 関数定義
+
+    // 関数の返り値の型か、グローバル変数の型
+    DeclToken *new_decl = decl();
+    if (peek_reserved(";"))
+    {
+        // グローバルな変数定義である
+        Node *node = new_node_gvar(new_decl->identifier_token, new_decl->ptr_depth, new_decl->array_size);
+        expect(";");
+        return node;
+    }
+
+    // 関数定義である
+    Node *f = new_node_funcdef(new_decl->identifier_token);
+
+    // active_func を切り替える
+    Node *previous_func = active_func; // 復元用
+    active_func = f;
+    active_func->locals = NULL;
+    active_func->locals_size = 0;
+
+    expect("(");
+
+    // 関数の仮引数をパース
+    // 仮引数は int x, int* y のような形式で定義される
+    DeclToken *arg_decl = decl();
+    if (arg_decl != NULL)
+    {
+        // NOTE: ここで仮引数列は LVAR ノードとして繋げられていくことに注意
+        // レジスタの値を直接参照する場合は、LVAR 以外のノードを定義する必要がある
+        Node *arg = new_node_lvar_declare(arg_decl);
+        f->next = arg;
+        f->arg_count++;
+
+        // 第 2 引数以降
+        while (consume_reserved(","))
+        {
+            // 型名は今は読み捨てる
+            arg_decl = decl();
+            if (arg_decl == NULL)
+                error_at(token->str, "Invalid Function Argument.");
+
+            arg->next = new_node_lvar_declare(arg_decl);
+            arg = arg->next;
+            f->arg_count++;
+        }
+
+        arg->next = NULL;
+    }
+
+    // NOTE: ここで expect するのは型名または ) なので、expect(")") だとエラーメッセージが不適切
+    expect(")");
+    f->lhs = block();
+
+    active_func = previous_func; // 元に戻す
+    return f;
+}
+
 // 文
 Node *stmt()
 {
@@ -473,7 +461,7 @@ Node *stmt()
     DeclToken *new_decl = decl();
     if (new_decl != NULL)
     {
-        Node *node = new_node_lvar_declare(new_decl->identifier_token, new_decl->ptr_depth, new_decl->array_size);
+        Node *node = new_node_lvar_declare(new_decl);
         expect(";");
         return node;
     }
