@@ -107,6 +107,11 @@ int calc_type_size_impl(Type *ty)
         return 8;
     }
 
+    if (ty->kind == TYPE_CHAR)
+    {
+        return 1;
+    }
+
     // INT
     return 8;
 }
