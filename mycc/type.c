@@ -118,7 +118,7 @@ int calc_type_size_impl(Type *ty)
 
 // 型名を名前引きする
 // 見つからなかったら NULL を返します。
-Type *search_type(char *tname, int ptr_depth, int array_size)
+Type *search_type(char *tname, int tnamelen, int ptr_depth, int array_size)
 {
     if (array_size > 0)
     {
@@ -132,7 +132,7 @@ Type *search_type(char *tname, int ptr_depth, int array_size)
         // 定義されていないので生成する
         // 配列型の時、同じポインタ深度の要素型の型情報を探し、それを指す Array 型情報を生成する
         // TODO: ポインタ深度を +1 すべきなのかどうか
-        Type *ptr_to = search_type(tname, ptr_depth, 0);
+        Type *ptr_to = search_type(tname, tnamelen, ptr_depth, 0);
         Type *newdef = define_new_type_info(TYPE_ARRAY, ptr_depth);
         newdef->ptr_to = ptr_to;
         newdef->array_size = array_size;
@@ -151,7 +151,7 @@ Type *search_type(char *tname, int ptr_depth, int array_size)
 
         // 定義されていないので生成する
         // 深度を一つ減らして検索または生成する
-        Type *ptr_to = search_type(tname, ptr_depth - 1, 0);
+        Type *ptr_to = search_type(tname, tnamelen, ptr_depth - 1, 0);
         Type *newdef = define_new_type_info(TYPE_PTR, ptr_depth);
         newdef->ptr_to = ptr_to;
         newdef->type_size = calc_type_size_impl(newdef);
@@ -159,25 +159,43 @@ Type *search_type(char *tname, int ptr_depth, int array_size)
     }
     else
     {
-        if (strncmp(tname, "int", 3) != 0)
+        if (strncmp(tname, "char", tnamelen) == 0)
         {
-            // int 以外なら Error
-            error_at(token->str, "Invalid type name.");
+            Type *def = find_type_impl(TYPE_CHAR, 0);
+            if (def != NULL)
+            {
+                // 定義済みなので返す
+                return def;
+            }
+            else
+            {
+                // 型定義されている数を超えたので、定義して返す
+                Type *newdef = define_new_type_info(TYPE_CHAR, 0);
+                newdef->type_size = calc_type_size_impl(newdef);
+                return newdef;
+            }
         }
 
-        Type *int_def = find_type_impl(TYPE_INT, 0);
-        if (int_def != NULL)
+        if (strncmp(tname, "int", tnamelen) == 0)
         {
-            // int が定義済みなので返す
-            return int_def;
+            // INT
+            Type *int_def = find_type_impl(TYPE_INT, 0);
+            if (int_def != NULL)
+            {
+                // int が定義済みなので返す
+                return int_def;
+            }
+            else
+            {
+                // 型定義されている数を超えたので、定義して返す
+                Type *newdef = define_new_type_info(TYPE_INT, 0);
+                newdef->type_size = calc_type_size_impl(newdef);
+                return newdef;
+            }
         }
-        else
-        {
-            // 型定義されている数を超えたので、定義して返す
-            Type *newdef = define_new_type_info(TYPE_INT, 0);
-            newdef->type_size = calc_type_size_impl(newdef);
-            return newdef;
-        }
+
+        // 知らない型名なのでエラー
+        error_at(token->str, "Invalid type name: %.*s", tnamelen, tname);
     }
 
     return NULL;

@@ -53,18 +53,29 @@ Token *consume_ident()
     return result;
 }
 
-// 次のトークンが期待した型識別子の場合は、トークンを 1 つ読み進めてそのトークンを返す。
+// 次のトークンが型識別子の場合は、トークンを 1 つ読み進めてそのトークンを返す。
 // それ以外の場合には NULL を返す。
-Token *consume_type_ident(char *tname)
+// NOTE: これを別定義にしておかないと、int a; と a=0; のようなものを区別できない……
+Token *consume_type_ident()
 {
-    if (token->kind != TK_IDENT ||
-        strlen(tname) != token->len ||
-        memcmp(token->str, tname, token->len))
+    if (token->kind != TK_IDENT)
         return NULL;
 
-    Token *result = token;
-    token = token->next;
-    return result;
+    if (token->len == 3 && memcmp(token->str, "int", token->len) == 0)
+    {
+        Token *result = token;
+        token = token->next;
+        return result;
+    }
+
+    if (token->len == 4 && memcmp(token->str, "char", token->len) == 0)
+    {
+        Token *result = token;
+        token = token->next;
+        return result;
+    }
+
+    return NULL;
 }
 
 // 次のトークンが期待したトークンの場合は、トークンを 1 つ読み進めて true を返す。
@@ -239,7 +250,7 @@ Node *new_node_lvar_declare(DeclToken *decl_token)
     lvar->name = ident->str;
     lvar->len = ident->len;
 
-    lvar->ty = search_type("int", decl_token->ptr_depth, decl_token->array_size);
+    lvar->ty = search_type(decl_token->type_token->str, decl_token->type_token->len, decl_token->ptr_depth, decl_token->array_size);
     if (lvar->ty == NULL)
     {
         error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
@@ -277,14 +288,16 @@ Node *new_node_funcdef(Token *ident)
     node->fname = ident->str;
     node->fname_len = ident->len;
     // TODO: すでに存在済みの関数かどうか調べる
+    // TODO: 返り値型に対応
     return node;
 }
 
-Node *new_node_gvar(Token *ident, int ptr_depth, int array_size)
+Node *new_node_gvar(DeclToken *decl_token)
 {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_GVAR_DEF;
 
+    Token *ident = decl_token->identifier_token;
     GVar *gvar = find_gvar(ident);
     if (gvar != NULL)
     {
@@ -298,21 +311,11 @@ Node *new_node_gvar(Token *ident, int ptr_depth, int array_size)
     gvar->name = ident->str;
     gvar->len = ident->len;
 
-    gvar->ty = search_type("int", ptr_depth, array_size);
+    gvar->ty = search_type(decl_token->type_token->str, decl_token->type_token->len, decl_token->ptr_depth, decl_token->array_size);
     if (gvar->ty == NULL)
     {
         error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
     }
-
-    // if (active_func->locals == NULL)
-    // {
-    //     lvar->offset = 8; // 最初の変数は rbp - 8 の位置になる
-    // }
-    // else
-    // {
-    //     // オフセットは、一つ前の変数のオフセット + サイズ
-    //     lvar->offset = active_func->locals->offset + active_func->locals->ty->type_size;
-    // }
 
     node->gvar_info = gvar;
     globals = gvar;
@@ -351,8 +354,8 @@ void program()
 
 DeclToken *decl()
 {
-    // decl = "int" "*"* ident ("[" num "]")?
-    Token *type_token = consume_type_ident("int");
+    // decl = ("int" | "char") "*"* ident ("[" num "]")?
+    Token *type_token = consume_type_ident();
     if (type_token != NULL)
     {
         DeclToken *new_decl = calloc(1, sizeof(DeclToken));
@@ -395,7 +398,7 @@ Node *symboldef()
     if (peek_reserved(";"))
     {
         // グローバルな変数定義である
-        Node *node = new_node_gvar(new_decl->identifier_token, new_decl->ptr_depth, new_decl->array_size);
+        Node *node = new_node_gvar(new_decl);
         expect(";");
         return node;
     }
