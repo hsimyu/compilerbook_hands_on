@@ -18,6 +18,16 @@ Node *active_func;
 // グローバル変数のリスト
 GVar *globals;
 
+// 変数宣言情報
+typedef struct DeclToken DeclToken;
+struct DeclToken
+{
+    Token *type_token;
+    Token *identifier_token;
+    int ptr_depth;  // ポインタの場合
+    int array_size; // array の場合
+};
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて true を返す。
 // それ以外の場合には false を返す
 bool consume_reserved(char *op)
@@ -413,11 +423,46 @@ Node *symboldef()
     return f;
 }
 
+DeclToken *decl()
+{
+    // decl = "int" "*"* ident ("[" num "]")?
+    Token *type_token = consume_type_ident("int");
+    if (type_token != NULL)
+    {
+        DeclToken *new_decl = calloc(1, sizeof(DeclToken));
+        new_decl->type_token = type_token;
+
+        // ポインタ定義数をカウント
+        int ptr_depth = 0;
+        while (consume_reserved("*"))
+        {
+            ptr_depth++;
+        }
+        new_decl->ptr_depth = ptr_depth;
+
+        Token *ident = expect_ident();
+        new_decl->identifier_token = ident;
+
+        if (consume_reserved("["))
+        {
+            int array_size = expect_number();
+            // TODO: array_size が正の整数でなければ怒る
+
+            new_decl->array_size = array_size;
+            // 配列定義
+            expect("]");
+        }
+
+        return new_decl;
+    }
+    return NULL;
+}
+
 // 文
 Node *stmt()
 {
     // stmt =
-    //   "int" "*"* ident ("[" num "]")? ";" |
+    //   decl ";" |
     //   "{" stmt* "}" |
     //   "if" "(" expr ")" stmt ("else" stmt)? |
     //   "while" "(" expr ")" stmt
@@ -425,31 +470,10 @@ Node *stmt()
     //   "return" expr ";" |
     //   expr ";"
 
-    Token *type_token = consume_type_ident("int");
-    if (type_token != NULL)
+    DeclToken *new_decl = decl();
+    if (new_decl != NULL)
     {
-        // ポインタ定義数をカウント
-        int ptr_depth = 0;
-        while (consume_reserved("*"))
-        {
-            ptr_depth++;
-        }
-
-        Token *ident = expect_ident();
-
-        if (consume_reserved("["))
-        {
-            int array_size = expect_number();
-            // TODO: array_size が正の整数でなければ怒る
-
-            // 配列定義
-            expect("]");
-            Node *node = new_node_lvar_declare(ident, ptr_depth, array_size);
-            expect(";");
-            return node;
-        }
-
-        Node *node = new_node_lvar_declare(ident, ptr_depth, 0);
+        Node *node = new_node_lvar_declare(new_decl->identifier_token, new_decl->ptr_depth, new_decl->array_size);
         expect(";");
         return node;
     }
