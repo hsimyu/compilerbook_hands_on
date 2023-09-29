@@ -262,12 +262,19 @@ Node *new_node_lvar_declare(DeclToken *decl_token)
     }
     else
     {
-        // オフセットは、一つ前の変数のオフセット + サイズ
-        lvar->offset = active_func->locals->offset + active_func->locals->ty->type_size;
+        // 新しいオフセットは、ここまでの変数サイズ + 8
+        lvar->offset = active_func->locals_size + 8;
     }
     node->lvar_info = lvar;
     active_func->locals = lvar;
-    active_func->locals_size += lvar->ty->type_size;
+
+    int size_on_stack = lvar->ty->type_size;
+    if (size_on_stack < 8)
+    {
+        // 8byte より小さかったら、8byte 単位にする
+        size_on_stack = 8;
+    }
+    active_func->locals_size += size_on_stack;
 
     return node;
 }
