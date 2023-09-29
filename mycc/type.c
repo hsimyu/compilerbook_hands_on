@@ -62,6 +62,36 @@ bool is_array(Node *node)
     return (node->kind == ND_LVAR_REF && node->lvar_info->ty->kind == TYPE_ARRAY);
 }
 
+bool is_ptr(Node *node)
+{
+    if (node == NULL)
+    {
+        return false;
+    }
+
+    return (node->kind == ND_LVAR_REF && node->lvar_info->ty->kind == TYPE_PTR);
+}
+
+bool is_char(Node *node)
+{
+    if (node == NULL)
+    {
+        return false;
+    }
+
+    if (node->kind == ND_ADDPTR || node->kind == ND_SUBPTR)
+    {
+        return is_char(node->lhs) && !is_ptr(node->lhs);
+    }
+
+    if (node->kind == ND_DEREF)
+    {
+        return is_char(node->lhs);
+    }
+
+    return (node->kind == ND_LVAR_REF && node->lvar_info->ty->kind == TYPE_CHAR);
+}
+
 Type *find_type_impl(TypeKind kind, int ptr_depth)
 {
     for (int i = 0; i < 100; i++)

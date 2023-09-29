@@ -57,10 +57,23 @@ void gen_rval(Node *node)
     }
     else
     {
-        gen_lval(node);               // node が示す変数のアドレスをスタックに積む命令を生成
-        printf("  pop rax\n");        // 変数アドレスを取り出す
-        printf("  mov rax, [rax]\n"); // 変数アドレスに格納されている値を取り出す
-        printf("  push rax\n");       // 取り出した値をスタックに push する
+        gen_lval(node); // node が示す変数のアドレスをスタックに積む命令を生成
+
+        printf("  pop rax\n"); // 変数アドレスを取り出す
+
+        // 変数アドレスに格納されている値を取り出す
+        if (is_char(node))
+        {
+            // TODO: char のポインタのことを考えてない
+            printf("  movsx ecx, BYTE PTR [rax]\n"); // BYTE PTR ってなんや
+            printf("  push rcx\n");                  // 取り出した値をスタックに push する
+        }
+        else
+        {
+            // int, int*
+            printf("  mov rax, [rax]\n");
+            printf("  push rax\n"); // 取り出した値をスタックに push する
+        }
     }
 }
 
@@ -185,12 +198,21 @@ void gen(Node *node)
         return;
     case ND_ASSIGN:
         printf("# ASSIGN BEGIN\n");
-        gen_lval(node->lhs);          // 左辺が示すアドレスをスタックに積む
-        gen(node->rhs);               // 右辺の評価値をスタックに積む
-        printf("  pop rdi\n");        // 右辺の評価値を取り出す
-        printf("  pop rax\n");        // 変数アドレスを取り出す
-        printf("  mov [rax], rdi\n"); // 変数アドレスに評価値を格納
-        printf("  push rdi\n");       // 代入式の評価値は代入結果とするので、rdi をスタックに積む
+        gen_lval(node->lhs);   // 左辺が示すアドレスをスタックに積む
+        gen(node->rhs);        // 右辺の評価値をスタックに積む
+        printf("  pop rdi\n"); // 右辺の評価値を取り出す
+        printf("  pop rax\n"); // 変数アドレスを取り出す
+
+        if (is_char(node->lhs))
+        {
+            printf("  mov BYTE PTR [rax], dil\n"); // 8bit レジスタを使って、変数アドレスに評価値を格納
+        }
+        else
+        {
+            printf("  mov [rax], rdi\n"); // 変数アドレスに評価値を格納
+        }
+
+        printf("  push rdi\n"); // 代入式の評価値は代入結果とするので、rdi をスタックに積む
         printf("# ASSIGN END\n");
         return;
     case ND_RETURN:

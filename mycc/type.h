@@ -25,6 +25,7 @@ struct Type
 struct Node;
 bool is_address(struct Node *node);
 bool is_array(struct Node *node);
+bool is_char(struct Node *node);
 
 void init_type();
 Type *search_type(char *tname, int tnamelen, int ptr_depth, int array_size);
