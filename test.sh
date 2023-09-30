@@ -83,5 +83,6 @@ assert 1 'int a; int b; int z[10]; int main(){ return 1; }'
 assert 0 'int a; int main(){ return a; }'
 assert 1 'int a; int main(){ a = 1; return a; }'
 assert 1 'int main(){ char a; a = 1; return a; }'
+assert 3 'int main(){ char x[3]; x[0] = -1; x[1] = 2; int y; y = 4; return x[0] + y; }'
 
 echo OK

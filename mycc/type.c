@@ -89,7 +89,20 @@ bool is_char(Node *node)
         return is_char(node->lhs);
     }
 
-    return (node->kind == ND_LVAR_REF && node->lvar_info->ty->kind == TYPE_CHAR);
+    if (node->kind == ND_LVAR_REF)
+    {
+        if (node->lvar_info->ty->kind == TYPE_CHAR)
+        {
+            return true;
+        }
+
+        if (node->lvar_info->ty->kind == TYPE_ARRAY)
+        {
+            return (node->lvar_info->ty->ptr_to->kind == TYPE_CHAR);
+        }
+    }
+
+    return false;
 }
 
 Type *find_type_impl(TypeKind kind, int ptr_depth)
