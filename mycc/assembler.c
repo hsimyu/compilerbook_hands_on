@@ -65,15 +65,14 @@ void gen_rval(Node *node)
         if (is_char(node))
         {
             // TODO: char のポインタのことを考えてない
-            printf("  movsx ecx, BYTE PTR [rax]\n"); // BYTE PTR ってなんや
-            printf("  push rcx\n");                  // 取り出した値をスタックに push する
+            printf("  movsx eax, BYTE PTR [rax]\n");
         }
         else
         {
             // int, int*
             printf("  mov rax, [rax]\n");
-            printf("  push rax\n"); // 取り出した値をスタックに push する
         }
+        printf("  push rax\n"); // 取り出した値をスタックに push する
     }
 }
 
@@ -169,10 +168,20 @@ void gen(Node *node)
         // ここに到達するのは右辺値としてのデリファレンス
         // (左辺値として代入対象になる時、ND_ASSIGN から gen_lval に飛ぶ)
         printf("# DEREF (rhs) BEGIN\n");
-        gen_rval(node->lhs);          // lhs の指し先の値がスタックに積まれている
-        printf("  pop rax\n");        // ポインタの指し先アドレスを取り出す
-        printf("  mov rax, [rax]\n"); // 指し先に格納されている値を取り出す
-        printf("  push rax\n");       // 取り出した値をスタックに push する
+        gen_rval(node->lhs);   // lhs の指し先の値がスタックに積まれている
+        printf("  pop rax\n"); // ポインタの指し先アドレスを取り出す
+
+        if (is_char(node->lhs))
+        {
+            printf("  movsx eax, BYTE PTR [rax]\n");
+        }
+        else
+        {
+            printf("  mov rax, [rax]\n"); // 指し先に格納されている値を取り出す
+        }
+
+        printf("  push rax\n"); // 取り出した値をスタックに push する
+
         printf("# DEREF END\n");
         return;
     case ND_LVAR_DEC: // ローカル変数の宣言
