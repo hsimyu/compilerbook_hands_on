@@ -9,6 +9,7 @@ void gen_string_literals()
     StringLiteral *str_literals = get_string_literals();
     int literal_index = 0;
 
+    // TODO: ここでグローバル変数の定義も吐き出すようにする
     printf(".data\n");
     while (str_literals != NULL)
     {
@@ -176,7 +177,7 @@ void gen(Node *node)
         printf("  push %d\n", node->val_num);
         return;
     case ND_STRING:
-        printf("# STRING\n");
+        printf("# UNKNOWN STRING NODE\n");
         return;
     case ND_ADDR:
         printf("# ADDR\n");
@@ -226,21 +227,35 @@ void gen(Node *node)
         return;
     case ND_ASSIGN:
         printf("# ASSIGN BEGIN\n");
-        gen_lval(node->lhs);   // 左辺が示すアドレスをスタックに積む
-        gen(node->rhs);        // 右辺の評価値をスタックに積む
-        printf("  pop rdi\n"); // 右辺の評価値を取り出す
-        printf("  pop rax\n"); // 変数アドレスを取り出す
-
-        if (is_char(node->lhs))
+        if (node->rhs != NULL && node->rhs->kind == ND_STRING)
         {
-            printf("  mov BYTE PTR [rax], dil\n"); // 8bit レジスタを使って、変数アドレスに評価値を格納
+            gen_lval(node->lhs);   // 左辺が示すアドレスをスタックに積む
+            printf("  pop rax\n"); // 変数アドレスを取り出す
+
+            printf("# STRING LITERAL\n");
+            // 右辺が文字列リテラルの時はレジスタを介さないで、テキストラベルを参照する
+            // TODO: OFFSET FLAT って何
+            printf("  mov QWORD PTR [rax], OFFSET FLAT:.LC%d\n", node->rhs->val_str->asm_index);
+            printf("  push 1\n"); // 適当な値をスタックに積む?
         }
         else
         {
-            printf("  mov [rax], rdi\n"); // 変数アドレスに評価値を格納
-        }
+            gen_lval(node->lhs);   // 左辺が示すアドレスをスタックに積む
+            gen(node->rhs);        // 右辺の評価値をスタックに積む
+            printf("  pop rdi\n"); // 右辺の評価値を取り出す
+            printf("  pop rax\n"); // 変数アドレスを取り出す
 
-        printf("  push rdi\n"); // 代入式の評価値は代入結果とするので、rdi をスタックに積む
+            if (is_char(node->lhs))
+            {
+                printf("  mov BYTE PTR [rax], dil\n"); // 8bit レジスタを使って、変数アドレスに評価値を格納
+            }
+            else
+            {
+                printf("  mov [rax], rdi\n"); // 変数アドレスに評価値を格納
+            }
+
+            printf("  push rdi\n"); // 代入式の評価値は代入結果とするので、rdi をスタックに積む
+        }
         printf("# ASSIGN END\n");
         return;
     case ND_RETURN:
