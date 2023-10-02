@@ -4,6 +4,22 @@
 #include "parser.h"
 #include "type.h"
 
+void gen_string_literals()
+{
+    StringLiteral *str_literals = get_string_literals();
+    int literal_index = 0;
+
+    printf(".data\n");
+    while (str_literals != NULL)
+    {
+        printf(".LC%d:\n", literal_index);
+        printf("  .string \"%.*s\"\n", str_literals->len, str_literals->val);
+        str_literals->asm_index = literal_index;
+        str_literals = str_literals->next;
+        literal_index++;
+    }
+}
+
 void gen_lval(Node *node);
 void gen_rval(Node *node);
 void gen(Node *node);
@@ -158,6 +174,9 @@ void gen(Node *node)
     case ND_NUM:
         printf("# NUM\n");
         printf("  push %d\n", node->val_num);
+        return;
+    case ND_STRING:
+        printf("# STRING\n");
         return;
     case ND_ADDR:
         printf("# ADDR\n");

@@ -25,6 +25,9 @@ int main(int argc, char **argv)
     // アセンブリのヘッダー
     printf(".intel_syntax noprefix\n");
 
+    // データセクションを生成
+    gen_string_literals();
+
     int line = 0;
     while (nodes[line] != NULL)
     {

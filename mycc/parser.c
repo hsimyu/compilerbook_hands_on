@@ -20,7 +20,7 @@ GVar *globals;
 
 // 文字列リテラルのリスト
 StringLiteral *str_literals;
-StringLiteral *get_string_literarles()
+StringLiteral *get_string_literals()
 {
     return str_literals;
 }

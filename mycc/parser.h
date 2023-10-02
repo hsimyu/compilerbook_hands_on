@@ -41,6 +41,7 @@ struct StringLiteral
 {
     char *val;           // 文字列
     int len;             // 長さ
+    int asm_index;       // アセンブル時のインデックス
     StringLiteral *next; // 次
 };
 
@@ -90,4 +91,4 @@ struct Node
 Node **parse();
 
 // パース結果として定義された文字列リテラルのリストを返します。
-StringLiteral *get_string_literarles();
+StringLiteral *get_string_literals();

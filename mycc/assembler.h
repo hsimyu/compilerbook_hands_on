@@ -4,3 +4,6 @@
 
 // ノード列をアセンブルします。
 void gen(Node *node);
+
+// データセクションを生成します。
+void gen_string_literals();
