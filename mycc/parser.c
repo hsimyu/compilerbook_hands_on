@@ -18,6 +18,13 @@ Node *active_func;
 // グローバル変数のリスト
 GVar *globals;
 
+// 文字列リテラルのリスト
+StringLiteral *str_literals;
+StringLiteral *get_string_literarles()
+{
+    return str_literals;
+}
+
 // 変数宣言情報
 typedef struct DeclToken DeclToken;
 struct DeclToken
@@ -87,6 +94,18 @@ bool consume_control(TokenKind kind)
 
     token = token->next;
     return true;
+}
+
+// 次のトークンが文字列の場合は、トークンを 1 つ読み進めてそのトークンを返す。
+// それ以外の場合には NULL を返す。
+Token *consume_string()
+{
+    if (token->kind != TK_STRING)
+        return NULL;
+
+    Token *result = token;
+    token = token->next;
+    return result;
 }
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める
@@ -174,7 +193,7 @@ Node *new_node_num(int val)
 {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_NUM;
-    node->val = val;
+    node->val_num = val;
     return node;
 }
 
@@ -745,7 +764,7 @@ Node *unary()
 
         Node *node = calloc(1, sizeof(Node));
         node->kind = ND_NUM;
-        node->val = type_size;
+        node->val_num = type_size;
         return node;
     }
 
@@ -810,6 +829,7 @@ Node *primary()
 {
     // primary =
     //   num |
+    //   str |
     //   ident ("(" expr? ("," expr)* ")")? |
     //  "(" expr ")"
     if (consume_reserved("("))
@@ -859,6 +879,45 @@ Node *primary()
 
         // 関数呼び出しでない
         return new_node_var_ref(tok);
+    }
+
+    tok = consume_string();
+    if (tok)
+    {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_STRING;
+
+        // 生成済みの文字列リテラルを探索
+        // NOTE: ここで、Node は "abc" のように二重引用符まで含めた文字列を保持している
+        int content_length = (tok->len - 2);
+        StringLiteral *target = str_literals;
+        while (target != NULL)
+        {
+            if (target->len == content_length && memcmp(tok->str + 1, target->val, content_length))
+                break;
+
+            target = target->next;
+        }
+
+        if (target == NULL)
+        {
+            // 新しい文字列
+            target = calloc(1, sizeof(StringLiteral));
+            target->val = tok->str + 1;
+            target->len = content_length;
+            node->val_str = target;
+
+            // この実装だと、先に出てきたリテラルの方が後ろに定義されることに注意
+            target->next = str_literals;
+            str_literals = target;
+        }
+        else
+        {
+            // 既知の文字列
+            node->val_str = target;
+        }
+
+        return node;
     }
 
     return new_node_num(expect_number());

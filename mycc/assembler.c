@@ -157,7 +157,7 @@ void gen(Node *node)
         return;
     case ND_NUM:
         printf("# NUM\n");
-        printf("  push %d\n", node->val);
+        printf("  push %d\n", node->val_num);
         return;
     case ND_ADDR:
         printf("# ADDR\n");

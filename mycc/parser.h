@@ -20,7 +20,8 @@ typedef enum
     ND_DIV,      // /
     ND_DEREF,    // 単項*
     ND_ADDR,     // 単項&
-    ND_NUM,      // 整数
+    ND_NUM,      // 整数リテラル
+    ND_STRING,   // 文字列リテラル
     ND_LVAR_REF, // ローカル変数参照
     ND_LVAR_DEC, // ローカル変数定義
     ND_RETURN,   // return
@@ -34,6 +35,14 @@ typedef enum
     ND_GVAR_DEF, // グローバル変数定義
     ND_GVAR_REF, // グローバル変数参照
 } NodeKind;
+
+typedef struct StringLiteral StringLiteral;
+struct StringLiteral
+{
+    char *val;           // 文字列
+    int len;             // 長さ
+    StringLiteral *next; // 次
+};
 
 typedef struct LVar LVar;
 struct LVar
@@ -59,22 +68,26 @@ typedef struct Node Node;
 // AST のノード
 struct Node
 {
-    NodeKind kind;   // 種類
-    Node *lhs;       // 左辺
-    Node *rhs;       // 右辺
-    int val;         // kind が ND_NUM の場合のみ
-    LVar *lvar_info; // kind が ND_LVAR の場合のみ
-    GVar *gvar_info; // kind が ND_GVAR の場合のみ
-    Node *opt_a;     // kind が ND_IFELSE, ND_FOR の場合のみ
-    Node *opt_b;     // kind が ND_FOR の場合のみ
-    Node *next;      // kind が ND_BLOCK の場合のみ
-    char *fname;     // kind が ND_FUNCCALL の場合のみ
-    int fname_len;   // kind が ND_FUNCCALL の場合のみ
-    Node *call_args; // kind が ND_FUNCCALL の場合のみ
-    int arg_count;   // kind が ND_FUNCDEF の場合のみ
-    LVar *locals;    // kind が ND_FUNCDEF の場合のみ: ローカル変数のリスト
-    int locals_size; // kind が ND_FUNCDEF の場合のみ: ローカル変数の合計サイズ
+    NodeKind kind;          // 種類
+    Node *lhs;              // 左辺
+    Node *rhs;              // 右辺
+    int val_num;            // kind が ND_NUM の場合のみ
+    StringLiteral *val_str; // kind が ND_STRING の場合のみ
+    LVar *lvar_info;        // kind が ND_LVAR の場合のみ
+    GVar *gvar_info;        // kind が ND_GVAR の場合のみ
+    Node *opt_a;            // kind が ND_IFELSE, ND_FOR の場合のみ
+    Node *opt_b;            // kind が ND_FOR の場合のみ
+    Node *next;             // kind が ND_BLOCK の場合のみ
+    char *fname;            // kind が ND_FUNCCALL の場合のみ
+    int fname_len;          // kind が ND_FUNCCALL の場合のみ
+    Node *call_args;        // kind が ND_FUNCCALL の場合のみ
+    int arg_count;          // kind が ND_FUNCDEF の場合のみ
+    LVar *locals;           // kind が ND_FUNCDEF の場合のみ: ローカル変数のリスト
+    int locals_size;        // kind が ND_FUNCDEF の場合のみ: ローカル変数の合計サイズ
 };
 
 // トークン列をパースします。
 Node **parse();
+
+// パース結果として定義された文字列リテラルのリストを返します。
+StringLiteral *get_string_literarles();
