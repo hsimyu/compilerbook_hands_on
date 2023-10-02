@@ -56,6 +56,24 @@ int count_identifier_length(char *str)
     return length;
 }
 
+// 文字列リテラルの長さを調べます。
+int count_string_length(char *str)
+{
+    // str は最初の " を指しているので、str + 1 から見始める
+    int length = 1;
+    char c = str[length];
+
+    // " から " までの長さを測る
+    while (c != '"')
+    {
+        length++;
+        c = str[length];
+    }
+
+    // ここで返すのは二重引用符を含む文字列長なので、必ず 2 以上になる
+    return length + 1;
+}
+
 // 次のトークンの文字列長を調べます。
 int count_token_length(char *str)
 {
@@ -145,6 +163,14 @@ void tokenize(char *p)
             int token_length = count_identifier_length(p);
             cur = new_token(TK_IDENT, cur, p, token_length);
             p = p + token_length;
+            continue;
+        }
+
+        if (*p == '"')
+        {
+            int content_length = count_string_length(p);
+            cur = new_token(TK_STRING, cur, p, content_length);
+            p = p + content_length;
             continue;
         }
 
