@@ -1,4 +1,18 @@
 #!/bin/bash
+run_test() {
+    # テストを自作コンパイラでビルドし、走らせる
+    ./bazel-bin/mycc/mycc "tests/test_impl.c" > asm/tmp.s
+    mkdir -p outputs
+    cc -static -o outputs/tmp asm/tmp.s
+    ./outputs/tmp
+
+    exitcode="$?"
+    if [ $exitcode -eq 1 ]; then
+        echo "[Result] Test Failed."
+        exit 1
+    fi
+}
+
 assert_file() {
     expected="$1"
     filename="$2"
@@ -96,5 +110,6 @@ assert_str 3 'int main(){ char x[3]; x[0] = -1; x[1] = 2; int y; y = 4; return x
 assert_str 1 'int main(){ char x[3]; x[0] = "aaa"; return 1; }'
 assert_file 1 'tests/comment_test_1.c'
 assert_file 42 'tests/comment_test_2.c'
+run_test
 
 echo OK
