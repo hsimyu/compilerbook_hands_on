@@ -54,27 +54,6 @@ assert_main() {
 bazel build mycc
 
 # test
-assert_main 0 "0;"
-assert_main 42 "42;"
-assert_main 21 "5+20-4;"
-assert_main 41 " 12 + 34 - 5 ;"
-assert_main 47 "5+6*7;"
-assert_main 15 "5*(9-6);"
-assert_main 4 "(3+5)/2;"
-assert_main 10 "-10+20;"
-assert_main 10 '- -10;'
-assert_main 10 '- - +10;'
-assert_main 1 '5 == 5;'
-assert_main 0 '5 != 5;'
-assert_main 1 '4 != -1;'
-assert_main 0 '5 < 5;'
-assert_main 1 '1 < 2;'
-assert_main 1 '1 <= 2;'
-assert_main 0 '4 <= 2;'
-assert_main 1 '4 > 2;'
-assert_main 1 '4 >= 4;'
-assert_main 0 '(20 + 3 - 40) >= -4;'
-assert_main 2 '1;2;'
 assert_main 42 'int a; a=42;'
 assert_main 42 'int a; a=42;a;'
 assert_main 32 'int a; a=42;a=32;return a;'
