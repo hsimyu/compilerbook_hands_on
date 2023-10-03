@@ -94,6 +94,10 @@ void gen_rval(Node *node)
 }
 
 int label_index = 0;
+int acquire_label_index()
+{
+    return label_index++;
+}
 
 // assembler
 void gen(Node *node)
@@ -267,61 +271,69 @@ void gen(Node *node)
         printf("  ret\n");
         return;
     case ND_IF:
+    {
         printf("# IF\n");
-        gen(node->lhs);                        // 条件式を評価
-        printf("  pop rax\n");                 // 条件の評価値を取り出す
-        printf("  cmp rax, 0\n");              // 条件の評価値が 0 かどうか
-        printf("  je .Lend%d\n", label_index); // 評価値が 0 なら stmt を飛ばす
-        gen(node->rhs);                        // if ブロックの内部を評価
-        printf(".Lend%d:\n", label_index);     // ジャンプ用ラベル
+        gen(node->lhs);           // 条件式を評価
+        printf("  pop rax\n");    // 条件の評価値を取り出す
+        printf("  cmp rax, 0\n"); // 条件の評価値が 0 かどうか
+        int li = acquire_label_index();
+        printf("  je .Lend%d\n", li); // 評価値が 0 なら stmt を飛ばす
+        gen(node->rhs);               // if ブロックの内部を評価
+        printf(".Lend%d:\n", li);     // ジャンプ用ラベル
         printf("# IF END\n");
-        label_index++;
         return;
+    }
     case ND_IFELSE:
+    {
         printf("# IFELSE\n");
-        gen(node->lhs);                         // 条件式を評価
-        printf("  pop rax\n");                  // 条件の評価値を取り出す
-        printf("  cmp rax, 0\n");               // 条件の評価値が 0 かどうか
-        printf("  je .Lelse%d\n", label_index); // 評価値が 0 なら else へ飛ぶ
-        gen(node->rhs);                         // if ブロックの内部を評価
-        printf("  jmp .Lend%d\n", label_index); // end へ飛ぶ
-        printf(".Lelse%d:\n", label_index);     // else ラベル
-        gen(node->opt_a);                       // else ブロックの内部を評価
-        printf(".Lend%d:\n", label_index);      // end ラベル
+        gen(node->lhs);           // 条件式を評価
+        printf("  pop rax\n");    // 条件の評価値を取り出す
+        printf("  cmp rax, 0\n"); // 条件の評価値が 0 かどうか
+        int li = acquire_label_index();
+        printf("  je .Lelse%d\n", li); // 評価値が 0 なら else へ飛ぶ
+        gen(node->rhs);                // if ブロックの内部を評価
+        printf("  jmp .Lend%d\n", li); // end へ飛ぶ
+        printf(".Lelse%d:\n", li);     // else ラベル
+        gen(node->opt_a);              // else ブロックの内部を評価
+        printf(".Lend%d:\n", li);      // end ラベル
         printf("# IFELSE END\n");
-        label_index++;
         return;
+    }
     case ND_WHILE:
+    {
         printf("# WHILE\n");
-        printf(".Lbegin%d:\n", label_index);      // begin ラベル
-        gen(node->lhs);                           // 条件式を評価
-        printf("  pop rax\n");                    // 条件の評価値を取り出す
-        printf("  cmp rax, 0\n");                 // 条件の評価値が 0 かどうか
-        printf("  je .Lend%d\n", label_index);    // 0 なら end へ飛んで終了
-        gen(node->rhs);                           // while ブロックの内部を評価
-        printf("  pop rax\n");                    // rhs の評価値がスタックに積んであるので捨てる
-        printf("  jmp .Lbegin%d\n", label_index); // begin へ飛んでやり直し
-        printf(".Lend%d:\n", label_index);        // end ラベル
-        label_index++;
+        int li = acquire_label_index();
+        printf(".Lbegin%d:\n", li);      // begin ラベル
+        gen(node->lhs);                  // 条件式を評価
+        printf("  pop rax\n");           // 条件の評価値を取り出す
+        printf("  cmp rax, 0\n");        // 条件の評価値が 0 かどうか
+        printf("  je .Lend%d\n", li);    // 0 なら end へ飛んで終了
+        gen(node->rhs);                  // while ブロックの内部を評価
+        printf("  pop rax\n");           // rhs の評価値がスタックに積んであるので捨てる
+        printf("  jmp .Lbegin%d\n", li); // begin へ飛んでやり直し
+        printf(".Lend%d:\n", li);        // end ラベル
         printf("# WHILE END\n");
         return;
+    }
     case ND_FOR:
+    {
         printf("# FOR\n");
-        gen(node->lhs);                           // for (A; B; C) の A を評価 (初期化)
-        printf(".Lbegin%d:\n", label_index);      // begin ラベル
-        gen(node->opt_a);                         // B を実行
-        printf("  pop rax\n");                    // B の評価値を取り出す
-        printf("  cmp rax, 0\n");                 // B の評価値が 0 かどうか
-        printf("  je .Lend%d\n", label_index);    // 0 なら end へ飛んで終了
-        gen(node->rhs);                           // for ブロックの内部を評価
-        printf("  pop rax\n");                    // stmt の評価値がスタックに積んであるので捨てる
-        gen(node->opt_b);                         // C を評価
-        printf("  pop rax\n");                    // C の評価値がスタックに積んであるので捨てる
-        printf("  jmp .Lbegin%d\n", label_index); // begin へ飛んでやり直し
-        printf(".Lend%d:\n", label_index);        // end ラベル
+        int li = acquire_label_index();
+        gen(node->lhs);                  // for (A; B; C) の A を評価 (初期化)
+        printf(".Lbegin%d:\n", li);      // begin ラベル
+        gen(node->opt_a);                // B を実行
+        printf("  pop rax\n");           // B の評価値を取り出す
+        printf("  cmp rax, 0\n");        // B の評価値が 0 かどうか
+        printf("  je .Lend%d\n", li);    // 0 なら end へ飛んで終了
+        gen(node->rhs);                  // for ブロックの内部を評価
+        printf("  pop rax\n");           // stmt の評価値がスタックに積んであるので捨てる
+        gen(node->opt_b);                // C を評価
+        printf("  pop rax\n");           // C の評価値がスタックに積んであるので捨てる
+        printf("  jmp .Lbegin%d\n", li); // begin へ飛んでやり直し
+        printf(".Lend%d:\n", li);        // end ラベル
         printf("# FOR END\n");
-        label_index++;
         return;
+    }
     case ND_BLOCK:
     {
         printf("# {\n");
@@ -402,22 +414,22 @@ void gen(Node *node)
         printf("  and rax, 15\n"); // rax = rax & 0b00001111, ビットマスク
         printf("  cmp rax, 0\n");  // ビットマスク結果が 0 なら rsp は 16 の倍数、そうでなければ 8 の倍数
         // TODO: 4 の倍数の場合がある
-        printf("  je .Lcallb%d\n", label_index);
+        int li = acquire_label_index();
+        printf("  je .Lcallb%d\n", li);
 
         // rsp が 16 の倍数でない場合は呼び出し前後で rsp を調整する
-        printf(".Lcalla%d:\n", label_index);
+        printf(".Lcalla%d:\n", li);
         printf("  sub rsp, 8\n");
         printf("  call %.*s\n", node->fname_len, node->fname);
         printf("  add rsp, 8\n");
-        printf("  jmp .Lcallend%d\n", label_index);
+        printf("  jmp .Lcallend%d\n", li);
 
         // rsp が 16 の倍数の場合は、そのまま呼び出せる
-        printf(".Lcallb%d:\n", label_index);
+        printf(".Lcallb%d:\n", li);
         // 関数をコール
         printf("  call %.*s\n", node->fname_len, node->fname);
-        printf(".Lcallend%d:\n", label_index); // 終了ラベル
-        printf("  push rax\n");                // 戻り値をスタックに積む
-        label_index++;
+        printf(".Lcallend%d:\n", li); // 終了ラベル
+        printf("  push rax\n");       // 戻り値をスタックに積む
         return;
     }
     default:
