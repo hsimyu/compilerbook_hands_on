@@ -6,7 +6,6 @@
 #include "parser.h"
 #include "assembler.h"
 
-// 入力プログラム
 char *user_input;
 
 int main(int argc, char **argv)
@@ -17,9 +16,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // ファイルを読み込む
+    char *file_path = argv[1];
+    user_input = read_file(file_path);
+
     // トークン列を生成
-    user_input = argv[1];
-    tokenize(argv[1]);
+    tokenize(user_input);
     Node **nodes = parse();
 
     // アセンブリのヘッダー

@@ -3,7 +3,10 @@ assert() {
     expected="$1"
     input="$2"
 
-    ./bazel-bin/mycc/mycc "$input" > asm/tmp.s
+    test_file_name="outputs/autogen_test.c"
+    echo "$input" > $test_file_name
+
+    ./bazel-bin/mycc/mycc $test_file_name > asm/tmp.s
     mkdir -p outputs
     cc -static -o outputs/tmp asm/tmp.s
     ./outputs/tmp
