@@ -181,7 +181,9 @@ void gen(Node *node)
         printf("  push %d\n", node->val_num);
         return;
     case ND_STRING:
-        printf("# UNKNOWN STRING NODE\n");
+        // TODO: 変数に入れない文字列リテラルの場合はここに到達する
+        // アドレスとして何をスタックに積めばいいのか分からない
+        printf("# STRING\n");
         return;
     case ND_ADDR:
         printf("# ADDR\n");
