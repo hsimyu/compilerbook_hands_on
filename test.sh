@@ -87,8 +87,6 @@ assert_str 1 'int a; int main(){ a = 1; return a; }'
 assert_str 1 'int main(){ char a; a = 1; return a; }'
 assert_str 3 'int main(){ char x[3]; x[0] = -1; x[1] = 2; int y; y = 4; return x[0] + y; }'
 assert_str 1 'int main(){ char x[3]; x[0] = "aaa"; return 1; }'
-assert_file 1 'tests/comment_test_1.c'
-assert_file 42 'tests/comment_test_2.c'
 run_test
 
 echo OK

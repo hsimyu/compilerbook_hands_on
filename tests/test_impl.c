@@ -14,6 +14,18 @@ int assert(int expected, int result)
     return 0;
 }
 
+int line_comment()
+{
+    // 1 を返す
+    return 1;
+}
+
+int block_comment()
+{
+    /* これはブロックコメントです */
+    return 42;
+}
+
 int main()
 {
     assert(0, 0);
@@ -35,4 +47,6 @@ int main()
     assert(1, 4 <= 4);
     assert(1, 4 >= 4);
     assert(0, (20 + 3 - 40) >= -4);
+    assert(1, line_comment());
+    assert(42, block_comment());
 }
