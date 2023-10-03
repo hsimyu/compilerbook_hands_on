@@ -7,6 +7,7 @@
 #include "assembler.h"
 
 char *user_input;
+char *target_file_name;
 
 int main(int argc, char **argv)
 {
@@ -17,8 +18,8 @@ int main(int argc, char **argv)
     }
 
     // ファイルを読み込む
-    char *file_path = argv[1];
-    user_input = read_file(file_path);
+    target_file_name = argv[1];
+    user_input = read_file(target_file_name);
 
     // トークン列を生成
     tokenize(user_input);
