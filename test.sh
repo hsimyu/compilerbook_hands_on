@@ -1,27 +1,39 @@
 #!/bin/bash
-assert() {
+assert_file() {
+    expected="$1"
+    filename="$2"
+
+    ./bazel-bin/mycc/mycc $filename > asm/tmp.s
+    mkdir -p outputs
+    cc -static -o outputs/tmp asm/tmp.s
+    ./outputs/tmp
+    actual="$?"
+
+    input=`cat $filename`
+
+    if [ "$actual" = "$expected" ]; then
+        echo "$input"
+        echo "[Result] $actual"
+    else
+        echo "$input"
+        echo "[Result] $expected expected, but got $actual"
+        exit 1
+    fi
+    echo "-----------------------"
+}
+
+assert_str() {
     expected="$1"
     input="$2"
 
     test_file_name="outputs/autogen_test.c"
     echo "$input" > $test_file_name
 
-    ./bazel-bin/mycc/mycc $test_file_name > asm/tmp.s
-    mkdir -p outputs
-    cc -static -o outputs/tmp asm/tmp.s
-    ./outputs/tmp
-    actual="$?"
-
-    if [ "$actual" = "$expected" ]; then
-        echo "$input => $actual"
-    else
-        echo "$input => $expected expected, but got $actual"
-        exit 1
-    fi
+    assert_file "$1" "$test_file_name"
 }
 
 assert_main() {
-    assert "$1" "int main(){ $2 }"
+    assert_str "$1" "int main(){ $2 }"
 }
 
 # prepare
@@ -59,28 +71,30 @@ assert_main 35 'int a; a=0;if (a==1) return 42; else return 35;'
 assert_main 10 'int a; a=1;while(a!=10)a=10;return a;'
 assert_main 55 'int a; a=0;int b;for(b=1;b<=10;b=b+1)a=a+b;return a;'
 assert_main 8 'int a; a=0;int b;for(b=1;b<=2;b=b+1){a=a+b;a=a*2;} return a;'
-assert 70 'int foo() {return 42;} int main(){ return foo() + 28; }'
-assert 6 'int foo(int a, int b, int c) {return a + b + c;} int main(){ return foo(1, 2, 3); }'
-assert 42 'int main(){ int a; int b; a=42; b=&a; return *b; }'
-assert 1 'int main(){ int a; int* b; int******** c; return 1; }'
-assert 3 'int main(){ int x; int *y; y = &x; *y = 3; return x; }'
-assert 6 'int main(){ int x; int *y; y = &x; int *z; z = &x; x = 3; return *y + *z; }'
-# assert 4 'int main(){ int *p; alloc4(&p, 1, 2, 4, 8); int *q; q = p + 2; return *q; }'
-assert 4 'int main(){ int x; return sizeof(x); }'
-assert 8 'int main(){ int *y; return sizeof(y); }'
-assert 4 'int main(){ int x; return sizeof(x + 3); }'
-assert 8 'int main(){ int *y; return sizeof(y + 3); }'
-assert 80 'int main(){ int x[10]; return sizeof(x); }'
-assert 10 'int main(){ int a[2]; *a = 10; return *a; }'
-assert 10 'int main(){ int a[2]; *(a + 1) = 10; return *(a + 1); }'
-assert 3 'int main(){ int a[2]; *a = 1; *(a + 1) = 2; return *a + *(a + 1); }'
-assert 3 'int main(){ int a[2]; *a = 1; *(a + 1) = 2; int *p; p = a; return *p + *(p + 1); }'
-assert 6 'int main(){ int a[3]; a[0] = 1; a[1] = 2; a[2] = 3; return a[0] + a[1] + a[2]; }'
-assert 1 'int a; int b; int z[10]; int main(){ return 1; }'
-assert 0 'int a; int main(){ return a; }'
-assert 1 'int a; int main(){ a = 1; return a; }'
-assert 1 'int main(){ char a; a = 1; return a; }'
-assert 3 'int main(){ char x[3]; x[0] = -1; x[1] = 2; int y; y = 4; return x[0] + y; }'
-assert 1 'int main(){ char x[3]; x[0] = "aaa"; return 1; }'
+assert_str 70 'int foo() {return 42;} int main(){ return foo() + 28; }'
+assert_str 6 'int foo(int a, int b, int c) {return a + b + c;} int main(){ return foo(1, 2, 3); }'
+assert_str 42 'int main(){ int a; int b; a=42; b=&a; return *b; }'
+assert_str 1 'int main(){ int a; int* b; int******** c; return 1; }'
+assert_str 3 'int main(){ int x; int *y; y = &x; *y = 3; return x; }'
+assert_str 6 'int main(){ int x; int *y; y = &x; int *z; z = &x; x = 3; return *y + *z; }'
+# assert_str 4 'int main(){ int *p; alloc4(&p, 1, 2, 4, 8); int *q; q = p + 2; return *q; }'
+assert_str 4 'int main(){ int x; return sizeof(x); }'
+assert_str 8 'int main(){ int *y; return sizeof(y); }'
+assert_str 4 'int main(){ int x; return sizeof(x + 3); }'
+assert_str 8 'int main(){ int *y; return sizeof(y + 3); }'
+assert_str 80 'int main(){ int x[10]; return sizeof(x); }'
+assert_str 10 'int main(){ int a[2]; *a = 10; return *a; }'
+assert_str 10 'int main(){ int a[2]; *(a + 1) = 10; return *(a + 1); }'
+assert_str 3 'int main(){ int a[2]; *a = 1; *(a + 1) = 2; return *a + *(a + 1); }'
+assert_str 3 'int main(){ int a[2]; *a = 1; *(a + 1) = 2; int *p; p = a; return *p + *(p + 1); }'
+assert_str 6 'int main(){ int a[3]; a[0] = 1; a[1] = 2; a[2] = 3; return a[0] + a[1] + a[2]; }'
+assert_str 1 'int a; int b; int z[10]; int main(){ return 1; }'
+assert_str 0 'int a; int main(){ return a; }'
+assert_str 1 'int a; int main(){ a = 1; return a; }'
+assert_str 1 'int main(){ char a; a = 1; return a; }'
+assert_str 3 'int main(){ char x[3]; x[0] = -1; x[1] = 2; int y; y = 4; return x[0] + y; }'
+assert_str 1 'int main(){ char x[3]; x[0] = "aaa"; return 1; }'
+assert_file 1 'tests/comment_test_1.c'
+assert_file 42 'tests/comment_test_2.c'
 
 echo OK
