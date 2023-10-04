@@ -169,6 +169,7 @@ void gen(Node *node)
         gen(node->lhs);
 
         // エピローグ
+        // TODO: ブロック内最後の評価ノードが ND_RETURN であれば、これは不要
         printf("  pop rax\n");      // スタックトップの評価値を rax へ取り出す
         printf("  mov rsp, rbp\n"); // rsp を rbp まで戻す
         printf("  pop rbp\n");      // 前の rbp を復元
