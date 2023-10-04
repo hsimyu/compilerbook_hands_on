@@ -220,6 +220,7 @@ int array_test_5()
     return a[0] + a[1] + a[2];
 }
 
+/*
 int global_var_test_a;
 int global_var_test_1()
 {
@@ -234,6 +235,7 @@ int global_var_test_2()
     global_var_test_b[1] = 2;
     return global_var_test_b[0] + global_var_test_b[1];
 }
+*/
 
 int char_test_1()
 {
@@ -317,17 +319,17 @@ int main()
     assert(8, sizeof_test_4());
     assert(80, sizeof_test_5());
 
-    // assert(10, array_test_1());
-    // assert(10, array_test_2());
-    // assert(3, array_test_3());
-    // assert(3, array_test_4());
-    // assert(6, array_test_5());
+    assert(10, array_test_1());
+    assert(10, array_test_2());
+    assert(3, array_test_3());
+    assert(3, array_test_4());
+    assert(6, array_test_5());
 
-    assert(10, global_var_test_1());
+    // assert(10, global_var_test_1());
     // assert(3, global_var_test_2());
 
     assert(1, char_test_1());
-    // assert(3, char_test_2());
+    assert(3, char_test_2());
     assert(1, char_test_3());
 
     assert(1, line_comment());

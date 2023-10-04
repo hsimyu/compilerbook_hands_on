@@ -10,7 +10,7 @@ void gen_string_literals()
     int literal_index = 0;
 
     // TODO: ここでグローバル変数の定義も吐き出すようにする
-    printf(".data\n");
+    // printf(".data\n");
     while (str_literals != NULL)
     {
         printf(".LC%d:\n", literal_index);
@@ -112,7 +112,7 @@ void gen(Node *node)
     case ND_FUNCDEF:
         printf("# FUNCDEF\n");
         // TODO: .globl について調べる
-        printf(".text\n");
+        // printf(".text\n");
         printf(".globl %.*s\n", node->fname_len, node->fname);
         printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
 
@@ -120,7 +120,10 @@ void gen(Node *node)
         printf("  push rbp\n");     // 関数呼び出し時の rbp をスタックに保存
         printf("  mov rbp, rsp\n"); // rbp に現在のスタックトップのアドレスを保存
         // 必要なローカル変数の分だけスタックを確保 (仮引数分もローカル変数に含まれている)
-        printf("  sub rsp, %d\n", node->locals_size);
+        if (node->locals_size > 0)
+        {
+            printf("  sub rsp, %d\n", node->locals_size);
+        }
 
         // レジスタからスタックへ仮引数を割り当てる
         // 1: rdi
@@ -423,6 +426,7 @@ void gen(Node *node)
         // rsp が 16 の倍数でない場合は呼び出し前後で rsp を調整する
         printf(".Lcalla%d:\n", li);
         printf("  sub rsp, 8\n");
+        printf("  mov al, 0\n"); // 浮動小数点の引数の個数
         printf("  call %.*s\n", node->fname_len, node->fname);
         printf("  add rsp, 8\n");
         printf("  jmp .Lcallend%d\n", li);
@@ -430,6 +434,7 @@ void gen(Node *node)
         // rsp が 16 の倍数の場合は、そのまま呼び出せる
         printf(".Lcallb%d:\n", li);
         // 関数をコール
+        printf("  mov al, 0\n"); // 浮動小数点の引数の個数
         printf("  call %.*s\n", node->fname_len, node->fname);
         printf(".Lcallend%d:\n", li); // 終了ラベル
         printf("  push rax\n");       // 戻り値をスタックに積む

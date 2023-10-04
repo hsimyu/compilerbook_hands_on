@@ -275,24 +275,25 @@ Node *new_node_lvar_declare(DeclToken *decl_token)
         error_at(token->str - 1, "Compiler error: failed to declare = '%.*s'", ident->len, ident->str);
     }
 
+    int size_on_stack = lvar->ty->type_size;
+    if (size_on_stack < 8)
+    {
+        // TODO: 正しく 8byte アラインメントを取るようにする
+        size_on_stack = 8;
+    }
+
     if (active_func->locals == NULL)
     {
-        lvar->offset = 8; // 最初の変数は rbp - 8 の位置になる
+        lvar->offset = size_on_stack; // 最初の変数は rbp - 8 の位置になる
     }
     else
     {
-        // 新しいオフセットは、ここまでの変数サイズ + 8
-        lvar->offset = active_func->locals_size + 8;
+        // 新しいオフセットは、ここまでの変数サイズ + size
+        lvar->offset = active_func->locals_size + size_on_stack;
     }
     node->lvar_info = lvar;
     active_func->locals = lvar;
 
-    int size_on_stack = lvar->ty->type_size;
-    if (size_on_stack < 8)
-    {
-        // 8byte より小さかったら、8byte 単位にする
-        size_on_stack = 8;
-    }
     active_func->locals_size += size_on_stack;
 
     return node;
