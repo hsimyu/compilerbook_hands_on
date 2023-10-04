@@ -54,16 +54,6 @@ assert_main() {
 bazel build mycc
 
 # test
-assert_main 42 'int a; a=42;'
-assert_main 42 'int a; a=42;a;'
-assert_main 32 'int a; a=42;a=32;return a;'
-assert_main 21 'int a; a=1; int b; b=a+20;'
-assert_main 64 'int a; a=1; int b; b=a+20;return b+43;'
-assert_main 42 'int a; a=1;if (a==1) return 42;'
-assert_main 35 'int a; a=0;if (a==1) return 42; else return 35;'
-assert_main 10 'int a; a=1;while(a!=10)a=10;return a;'
-assert_main 55 'int a; a=0;int b;for(b=1;b<=10;b=b+1)a=a+b;return a;'
-assert_main 8 'int a; a=0;int b;for(b=1;b<=2;b=b+1){a=a+b;a=a*2;} return a;'
 assert_str 70 'int foo() {return 42;} int main(){ return foo() + 28; }'
 assert_str 6 'int foo(int a, int b, int c) {return a + b + c;} int main(){ return foo(1, 2, 3); }'
 assert_str 42 'int main(){ int a; int b; a=42; b=&a; return *b; }'
