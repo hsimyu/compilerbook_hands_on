@@ -29,8 +29,12 @@ int main(int argc, char **argv)
     printf(".intel_syntax noprefix\n");
 
     // データセクションを生成
+    printf(".data\n");
     gen_string_literals();
+    printf("\n");
 
+    // 命令セクションを生成
+    printf(".text\n");
     int line = 0;
     while (nodes[line] != NULL)
     {

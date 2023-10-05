@@ -10,7 +10,6 @@ void gen_string_literals()
     int literal_index = 0;
 
     // TODO: ここでグローバル変数の定義も吐き出すようにする
-    // printf(".data\n");
     while (str_literals != NULL)
     {
         printf(".LC%d:\n", literal_index);
@@ -43,7 +42,6 @@ void gen_lval(Node *node)
     else if (node->kind == ND_GVAR_REF)
     {
         // 左辺値としてのグローバル変数参照なので、アドレス値をスタックに積んで返す
-        // TOOD: lea 命令についてちゃんと調べる
         printf("  lea rax, %.*s[rip]\n", node->gvar_info->len, node->gvar_info->name);
         printf("  push rax\n");
     }
@@ -54,6 +52,32 @@ void gen_lval(Node *node)
         printf("  sub rax, %d\n", node->lvar_info->offset); // 変数名に対応するオフセット値だけ rax を下げる
         printf("  push rax\n");                             // rax の値 (= 変数のアドレス) をスタックに push する
     }
+}
+
+void evaluate_rval(Node *node)
+{
+    // 前提: スタックトップに評価対象のアドレスが乗っている
+    printf("  pop rax\n"); // 変数アドレスを取り出す
+
+    // 変数アドレスに格納されている値を取り出す
+    // 変数サイズによって取り出し方を変える
+    if (is_char(node))
+    {
+        // TODO: char のポインタのことを考えてない
+        printf("  movsx eax, BYTE PTR [rax]\n");
+    }
+    else if (is_address(node))
+    {
+        // int*
+        printf("  mov rax, QWORD PTR [rax]\n");
+    }
+    else
+    {
+        // int
+        printf("  mov eax, DWORD PTR [rax]\n");
+    }
+
+    printf("  push rax\n"); // 取り出した値をスタックに push する
 }
 
 // 右辺値の評価: 変数参照が指しているアドレスに格納されている値を評価
@@ -75,27 +99,7 @@ void gen_rval(Node *node)
     else
     {
         gen_lval(node); // node が示す変数のアドレスをスタックに積む命令を生成
-
-        printf("  pop rax\n"); // 変数アドレスを取り出す
-
-        // 変数アドレスに格納されている値を取り出す
-        if (is_char(node))
-        {
-            // TODO: char のポインタのことを考えてない
-            printf("  movsx eax, BYTE PTR [rax]\n");
-        }
-        else if (is_address(node))
-        {
-            // int*
-            printf("  mov rax, QWORD PTR [rax]\n");
-        }
-        else
-        {
-            // int
-            printf("  mov eax, DWORD PTR [rax]\n");
-        }
-
-        printf("  push rax\n"); // 取り出した値をスタックに push する
+        evaluate_rval(node);
     }
 }
 
@@ -118,7 +122,6 @@ void gen(Node *node)
     case ND_FUNCDEF:
         printf("# FUNCDEF\n");
         // TODO: .globl について調べる
-        // printf(".text\n");
         printf(".globl %.*s\n", node->fname_len, node->fname);
         printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
 
@@ -153,6 +156,7 @@ void gen(Node *node)
         while (arg != NULL)
         {
             // int 以外の引数を想定していない
+            // TODO: 引数のサイズによって取り出し方を変える
             arg_count++;
             switch (arg_count)
             {
@@ -213,20 +217,8 @@ void gen(Node *node)
         // ここに到達するのは右辺値としてのデリファレンス
         // (左辺値として代入対象になる時、ND_ASSIGN から gen_lval に飛ぶ)
         printf("# DEREF (rhs) BEGIN\n");
-        gen_rval(node->lhs);   // lhs の指し先の値がスタックに積まれている
-        printf("  pop rax\n"); // ポインタの指し先アドレスを取り出す
-
-        if (is_char(node->lhs))
-        {
-            printf("  movsx eax, BYTE PTR [rax]\n");
-        }
-        else
-        {
-            printf("  mov rax, [rax]\n"); // 指し先に格納されている値を取り出す
-        }
-
-        printf("  push rax\n"); // 取り出した値をスタックに push する
-
+        gen_rval(node->lhs); // lhs の指し先の値がスタックに積まれている
+        evaluate_rval(node->lhs);
         printf("# DEREF END\n");
         return;
     case ND_LVAR_DEC: // ローカル変数の宣言
@@ -274,9 +266,13 @@ void gen(Node *node)
             {
                 printf("  mov BYTE PTR [rax], dil\n"); // 8bit レジスタを使って、変数アドレスに評価値を格納
             }
+            else if (is_address(node->lhs))
+            {
+                printf("  mov QWORD PTR [rax], rdi\n"); // 変数アドレスに評価値を格納
+            }
             else
             {
-                printf("  mov [rax], rdi\n"); // 変数アドレスに評価値を格納
+                printf("  mov DWORD PTR [rax], edi\n"); // 変数アドレスに評価値を格納
             }
 
             printf("  push rdi\n"); // 代入式の評価値は代入結果とするので、rdi をスタックに積む
