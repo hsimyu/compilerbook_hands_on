@@ -184,7 +184,7 @@ void gen(Node *node)
         Node *arg = node->next;
         while (arg != NULL)
         {
-            // int 以外の引数を想定していない
+            // TODO: int 以外の引数を想定していない
             // TODO: 引数のサイズによって取り出し方を変える
             arg_count++;
             switch (arg_count)

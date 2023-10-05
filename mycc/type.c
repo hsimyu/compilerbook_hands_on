@@ -156,6 +156,7 @@ int calc_type_size_impl(Type *ty)
     }
 
     // INT
+    // TODO: 4 にする
     return 8;
 }
 

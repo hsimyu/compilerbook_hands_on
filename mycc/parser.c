@@ -276,15 +276,9 @@ Node *new_node_lvar_declare(DeclToken *decl_token)
     }
 
     int size_on_stack = lvar->ty->type_size;
-    if (size_on_stack < 8)
-    {
-        // TODO: 正しく 8byte アラインメントを取るようにする
-        size_on_stack = 8;
-    }
-
     if (active_func->locals == NULL)
     {
-        lvar->offset = size_on_stack; // 最初の変数は rbp - 8 の位置になる
+        lvar->offset = size_on_stack; // 最初の変数は rbp - size の位置になる
     }
     else
     {
