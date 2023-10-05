@@ -1,14 +1,9 @@
 int assert(int expected, int result)
 {
-    // printf() は標準ライブラリとして外部リンクされている
-    char *msg;
-    msg = "expected: %d, result: %d\n";
-    printf(msg, expected, result);
-
+    printf("expected: %d, result: %d\n", expected, result);
     if (expected != result)
     {
-        msg = "BAD\n";
-        printf(msg);
+        printf("BAD\n");
         exit(1);
     }
     return 0;
@@ -261,6 +256,20 @@ int char_test_3()
     return 1;
 }
 
+int char_test_4()
+{
+    char *msg;
+    msg = "foo";
+    if (strncmp(msg, "foo", 3) == 0)
+    {
+        return 10;
+    }
+    else
+    {
+        return -10;
+    }
+}
+
 int line_comment()
 {
     // 1 を返す
@@ -331,6 +340,7 @@ int main()
     assert(1, char_test_1());
     assert(3, char_test_2());
     assert(1, char_test_3());
+    assert(10, char_test_4());
 
     assert(1, line_comment());
     assert(42, block_comment());

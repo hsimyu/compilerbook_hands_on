@@ -236,9 +236,10 @@ void gen(Node *node)
         printf("  push %d\n", node->val_num);
         return;
     case ND_STRING:
-        // TODO: 変数に入れない文字列リテラルの場合はここに到達する
-        // アドレスとして何をスタックに積めばいいのか分からない
+        // 変数に入れない文字列リテラルの場合はここに到達する
+        // リテラルのアドレスを (ポインタとして) 積む
         printf("# STRING\n");
+        printf("  push OFFSET FLAT:.LC%d\n", node->val_str->asm_index);
         return;
     case ND_ADDR:
         printf("# ADDR\n");
