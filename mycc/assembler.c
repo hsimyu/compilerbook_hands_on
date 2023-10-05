@@ -84,11 +84,17 @@ void gen_rval(Node *node)
             // TODO: char のポインタのことを考えてない
             printf("  movsx eax, BYTE PTR [rax]\n");
         }
+        else if (is_address(node))
+        {
+            // int*
+            printf("  mov rax, QWORD PTR [rax]\n");
+        }
         else
         {
-            // int, int*
-            printf("  mov rax, [rax]\n");
+            // int
+            printf("  mov eax, DWORD PTR [rax]\n");
         }
+
         printf("  push rax\n"); // 取り出した値をスタックに push する
     }
 }
@@ -122,7 +128,15 @@ void gen(Node *node)
         // 必要なローカル変数の分だけスタックを確保 (仮引数分もローカル変数に含まれている)
         if (node->locals_size > 0)
         {
-            printf("  sub rsp, %d\n", node->locals_size);
+            if (node->locals_size % 8 != 0)
+            {
+                // 8byte アラインメントを取る
+                printf("  sub rsp, %d\n", node->locals_size + (8 - node->locals_size % 8));
+            }
+            else
+            {
+                printf("  sub rsp, %d\n", node->locals_size);
+            }
         }
 
         // レジスタからスタックへ仮引数を割り当てる
@@ -419,12 +433,10 @@ void gen(Node *node)
         printf("  mov rax, rsp\n");
         printf("  and rax, 15\n"); // rax = rax & 0b00001111, ビットマスク
         printf("  cmp rax, 0\n");  // ビットマスク結果が 0 なら rsp は 16 の倍数、そうでなければ 8 の倍数
-        // TODO: 4 の倍数の場合がある
         int li = acquire_label_index();
         printf("  je .Lcallb%d\n", li);
 
         // rsp が 16 の倍数でない場合は呼び出し前後で rsp を調整する
-        printf(".Lcalla%d:\n", li);
         printf("  sub rsp, 8\n");
         printf("  mov al, 0\n"); // 浮動小数点の引数の個数
         printf("  call %.*s\n", node->fname_len, node->fname);

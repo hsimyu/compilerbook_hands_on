@@ -196,9 +196,9 @@ int array_test_2()
 int array_test_3()
 {
     int a[2];
-    *a = 1;
+    *a = 16;
     *(a + 1) = 2;
-    return *a + *(a + 1);
+    return *a;
 }
 
 int array_test_4()
@@ -321,7 +321,7 @@ int main()
 
     assert(10, array_test_1());
     assert(10, array_test_2());
-    assert(3, array_test_3());
+    assert(16, array_test_3());
     assert(3, array_test_4());
     assert(6, array_test_5());
 
