@@ -109,6 +109,35 @@ int acquire_label_index()
     return label_index++;
 }
 
+Node *gen_block(Node *node)
+{
+    if (node->kind != ND_BLOCK)
+        error("Failed to generate assembly: non-block node processed as block: kind = %c", node->kind);
+
+    printf("# {\n");
+    Node *lastEvaluated = node;
+    while (lastEvaluated->next != NULL)
+    {
+        gen(lastEvaluated->next);
+        lastEvaluated = lastEvaluated->next;
+
+        if (lastEvaluated->next != NULL &&
+            lastEvaluated->kind != ND_WHILE &&
+            lastEvaluated->kind != ND_FOR &&
+            lastEvaluated->kind != ND_IF &&
+            lastEvaluated->kind != ND_IFELSE &&
+            lastEvaluated->kind != ND_LVAR_DEC)
+        {
+            // 最後の一つの文以外の評価値は不要
+            // スタックに積んであるので捨てる
+            // 制御構文の場合はスタックに評価値がないので不要
+            printf("  pop rax\n");
+        }
+    }
+    printf("# }\n");
+    return lastEvaluated;
+}
+
 // assembler
 void gen(Node *node)
 {
@@ -120,7 +149,7 @@ void gen(Node *node)
     switch (node->kind)
     {
     case ND_FUNCDEF:
-        printf("# FUNCDEF\n");
+        printf("# -- FUNC BEGIN: %.*s --\n", node->fname_len, node->fname);
         // TODO: .globl について調べる
         printf(".globl %.*s\n", node->fname_len, node->fname);
         printf("%.*s:\n", node->fname_len, node->fname); // 関数名ラベル
@@ -188,16 +217,19 @@ void gen(Node *node)
         }
 
         // ブロックを評価
-        gen(node->lhs);
+        Node *lastEvaluated = gen_block(node->lhs);
 
         // エピローグ
-        // TODO: ブロック内最後の評価ノードが ND_RETURN であれば、これは不要
-        printf("  pop rax\n");      // スタックトップの評価値を rax へ取り出す
-        printf("  mov rsp, rbp\n"); // rsp を rbp まで戻す
-        printf("  pop rbp\n");      // 前の rbp を復元
-        printf("  ret\n");          // リターンアドレスへ戻る
-        printf("# FUNCDEF END\n");
-        printf("\n");
+        // ブロック内最後の評価ノードが ND_RETURN であれば不要
+        if (lastEvaluated->kind != ND_RETURN)
+        {
+            printf("  pop rax\n");      // スタックトップの評価値を rax へ取り出す
+            printf("  mov rsp, rbp\n"); // rsp を rbp まで戻す
+            printf("  pop rbp\n");      // 前の rbp を復元
+            printf("  ret\n");          // リターンアドレスへ戻る
+        }
+
+        printf("# -- FUNC END: %.*s --\n\n", node->fname_len, node->fname);
         return;
     case ND_NUM:
         printf("# NUM\n");
@@ -353,27 +385,7 @@ void gen(Node *node)
     }
     case ND_BLOCK:
     {
-        printf("# {\n");
-        Node *target = node;
-        while (target->next != NULL)
-        {
-            gen(target->next);
-            target = target->next;
-
-            if (target->next != NULL &&
-                target->kind != ND_WHILE &&
-                target->kind != ND_FOR &&
-                target->kind != ND_IF &&
-                target->kind != ND_IFELSE &&
-                target->kind != ND_LVAR_DEC)
-            {
-                // 最後の一つの文以外の評価値は不要
-                // スタックに積んであるので捨てる
-                // 制御構文の場合はスタックに評価値がないので不要
-                printf("  pop rax\n");
-            }
-        }
-        printf("# }\n");
+        gen_block(node);
         return;
     }
     case ND_FUNCCALL:
