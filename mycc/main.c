@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 
     // データセクションを生成
     printf(".data\n");
-    gen_string_literals();
+    gen_data();
     printf("\n");
 
     // 命令セクションを生成

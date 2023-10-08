@@ -6,4 +6,4 @@
 void gen(Node *node);
 
 // データセクションを生成します。
-void gen_string_literals();
+void gen_data();

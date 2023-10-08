@@ -17,6 +17,10 @@ Node *active_func;
 
 // グローバル変数のリスト
 GVar *globals;
+GVar *get_gvar()
+{
+    return globals;
+}
 
 // 文字列リテラルのリスト
 StringLiteral *str_literals;

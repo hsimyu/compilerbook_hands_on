@@ -4,19 +4,31 @@
 #include "parser.h"
 #include "type.h"
 
-void gen_string_literals()
+void gen_data()
 {
-    StringLiteral *str_literals = get_string_literals();
-    int literal_index = 0;
-
-    // TODO: ここでグローバル変数の定義も吐き出すようにする
-    while (str_literals != NULL)
     {
-        printf(".LC%d:\n", literal_index);
-        printf("  .string \"%.*s\"\n", str_literals->len, str_literals->val);
-        str_literals->asm_index = literal_index;
-        str_literals = str_literals->next;
-        literal_index++;
+        GVar *gvar = get_gvar();
+        while (gvar != NULL)
+        {
+            printf(".globl %.*s\n", gvar->len, gvar->name);
+            printf("%.*s:\n", gvar->len, gvar->name);
+            printf("  .zero %u\n", gvar->ty->type_size);
+            gvar = gvar->next;
+        }
+    }
+
+    {
+        StringLiteral *str_literals = get_string_literals();
+        int literal_index = 0;
+
+        while (str_literals != NULL)
+        {
+            printf(".LC%d:\n", literal_index);
+            printf("  .string \"%.*s\"\n", str_literals->len, str_literals->val);
+            str_literals->asm_index = literal_index;
+            str_literals = str_literals->next;
+            literal_index++;
+        }
     }
 }
 
@@ -261,13 +273,7 @@ void gen(Node *node)
         gen_rval(node);
         printf("# LVAR END\n");
         return;
-    case ND_GVAR_DEF: // グローバル変数の定義
-        printf("# GVAR DEF\n");
-        printf(".data\n");
-        printf(".globl %.*s\n", node->gvar_info->len, node->gvar_info->name);
-        printf("%.*s:\n", node->gvar_info->len, node->gvar_info->name);
-        printf("  .zero %u\n", node->gvar_info->ty->type_size);
-        printf("\n");
+    case ND_GVAR_DEF: // グローバル変数の定義はデータセクションで Emit 済み
         return;
     case ND_GVAR_REF: // グローバル変数の参照
         // グローバル変数のアドレスに格納されている値を push する

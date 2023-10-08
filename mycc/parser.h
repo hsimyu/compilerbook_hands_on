@@ -90,5 +90,8 @@ struct Node
 // トークン列をパースします。
 Node **parse();
 
+// パース結果として定義されたグローバル変数のリストを返します。
+GVar *get_gvar();
+
 // パース結果として定義された文字列リテラルのリストを返します。
 StringLiteral *get_string_literals();

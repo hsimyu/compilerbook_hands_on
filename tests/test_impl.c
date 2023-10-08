@@ -215,7 +215,6 @@ int array_test_5()
     return a[0] + a[1] + a[2];
 }
 
-/*
 int global_var_test_a;
 int global_var_test_1()
 {
@@ -223,6 +222,7 @@ int global_var_test_1()
     return global_var_test_a;
 }
 
+/*
 int global_var_test_b[10];
 int global_var_test_2()
 {
