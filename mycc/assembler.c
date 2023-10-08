@@ -12,7 +12,26 @@ void gen_data()
         {
             printf(".globl %.*s\n", gvar->len, gvar->name);
             printf("%.*s:\n", gvar->len, gvar->name);
-            printf("  .zero %u\n", gvar->ty->type_size);
+            if (gvar->init)
+            {
+                // 初期化式がある
+                switch (gvar->ty->kind)
+                {
+                case TYPE_INT:
+                {
+                    printf("  .long %d\n", gvar->init->val_num);
+                    break;
+                }
+                default:
+                    // TODO: 対応
+                    break;
+                }
+            }
+            else
+            {
+                // 初期化式がない
+                printf("  .zero %u\n", gvar->ty->type_size);
+            }
             gvar = gvar->next;
         }
     }

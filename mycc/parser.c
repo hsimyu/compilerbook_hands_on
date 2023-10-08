@@ -412,14 +412,47 @@ DeclToken *decl()
     return NULL;
 }
 
+Node *new_node_gvar_init()
+{
+    // NOTE: 本当は、左辺の型によって valid な表現が変わる
+    // global_var_init =
+    //   num |
+    //   str |
+    //   "&" gvar |
+    //   gvar + num |
+    //   gvar - num
+
+    Token *tok = consume_string();
+    if (tok)
+    {
+        // TODO: 本当は、定義済みの文字列リテラルシンボルがあるかどうかを探索するべき
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_STRING;
+        return node;
+    }
+
+    return new_node_num(expect_number());
+}
+
 Node *symboldef()
 {
     // symboldef =
-    // decl ";" | グローバル変数定義
+    // decl ("=" global_var_init)? ";" | グローバル変数定義
     // decl "(" (decl)? ("," decl)? ")" block | 関数定義
 
     // 関数の返り値の型か、グローバル変数の型
     DeclToken *new_decl = decl();
+    if (peek_reserved("="))
+    {
+        // 初期化式を持つグローバル変数定義である
+        Node *node = new_node_gvar(new_decl);
+        expect("=");
+        Node *init = new_node_gvar_init();
+        node->gvar_info->init = init;
+        expect(";");
+        return node;
+    }
+
     if (peek_reserved(";"))
     {
         // グローバルな変数定義である

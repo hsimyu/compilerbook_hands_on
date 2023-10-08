@@ -2,6 +2,8 @@
 
 #include "type.h"
 
+struct Node;
+
 // parser
 typedef enum
 {
@@ -58,10 +60,11 @@ struct LVar
 typedef struct GVar GVar;
 struct GVar
 {
-    GVar *next; // 次の変数または NULL
-    char *name; // 変数の名前
-    int len;    // 名前の長さ
-    Type *ty;   // 変数の型
+    GVar *next;        // 次の変数または NULL
+    char *name;        // 変数の名前
+    int len;           // 名前の長さ
+    Type *ty;          // 変数の型
+    struct Node *init; // 定義ノード
 };
 
 typedef struct Node Node;

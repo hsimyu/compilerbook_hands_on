@@ -222,6 +222,12 @@ int global_var_test_1()
     return global_var_test_a;
 }
 
+int global_var_test_b = 20;
+int global_var_test_2()
+{
+    return global_var_test_b;
+}
+
 /*
 int global_var_test_b[10];
 int global_var_test_2()
@@ -334,7 +340,8 @@ int main()
     assert(3, array_test_4());
     assert(6, array_test_5());
 
-    // assert(10, global_var_test_1());
+    assert(10, global_var_test_1());
+    assert(20, global_var_test_2());
     // assert(3, global_var_test_2());
 
     assert(1, char_test_1());
